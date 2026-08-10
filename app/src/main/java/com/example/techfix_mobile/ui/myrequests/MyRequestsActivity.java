@@ -11,7 +11,7 @@ import com.example.techfix_mobile.R;
 //import com.example.techfix_mobile.data.RequestSyncManager;
 import com.example.techfix_mobile.db.DBHelper;
 import com.example.techfix_mobile.model.RepairRequest;
-//import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
+import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
 //import com.google.firebase.auth.FirebaseAuth;
 
 
@@ -62,9 +62,9 @@ public class MyRequestsActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerRequests);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MyRequestsAdapter(request -> {
-            //Intent i = new Intent(this, RequestDetailActivity.class);
-            //i.putExtra("requestId", request.getRequestId());
-            //startActivity(i);
+            Intent i = new Intent(this, RequestDetailActivity.class);
+            i.putExtra("requestId", request.getRequestId());
+            startActivity(i);
         });
         recyclerView.setAdapter(adapter);
 
