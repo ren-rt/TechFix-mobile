@@ -42,7 +42,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Simple strategy for coursework — bump DB_VERSION and drop/recreate if schema changes.
+
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_MY_REQUESTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PAYMENTS_CACHE);
         onCreate(db);
