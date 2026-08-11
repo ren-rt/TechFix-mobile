@@ -27,6 +27,9 @@
         <activity
             android:name=".ui.detail.RequestDetailActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.history.RepairHistoryActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

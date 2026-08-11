@@ -73,6 +73,9 @@ public class MyRequestsActivity extends AppCompatActivity {
             swipeRefresh.setRefreshing(false); // TODO: call syncThenLoad() once Firebase is added
         });
 
+        findViewById(R.id.btnGoToHistory).setOnClickListener(v ->
+                startActivity(new Intent(this, com.example.techfix_mobile.ui.history.RepairHistoryActivity.class)));
+
         loadFromLocal(); // show cached data immediately
         // syncThenLoad();  // TODO: uncomment once Firebase is added
     }
