@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#111108"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvWelcome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#F0F0E0"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/btnManageBranches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#EEEE30"
+        android:textColor="#080800"
+        android:text="Manage Branches" />
+    <Button
+        android:id="@+id/btnManageTechnicians"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#EEEE30"
+        android:textColor="#080800"
+        android:text="Manage Technicians" />
+
+</LinearLayout>

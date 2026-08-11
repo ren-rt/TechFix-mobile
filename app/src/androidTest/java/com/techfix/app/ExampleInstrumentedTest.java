@@ -1,4 +1,4 @@
-package com.example.techfix_mobile;
+package com.techfix.app;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.techfix_mobile", appContext.getPackageName());
+        assertEquals("com.techfix.app", appContext.getPackageName());
     }
 }
