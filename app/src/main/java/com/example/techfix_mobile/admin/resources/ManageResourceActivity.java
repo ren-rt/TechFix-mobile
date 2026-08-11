@@ -1,4 +1,4 @@
-package com.techfix.app.admin.resources;
+package com.example.techfix_mobile.admin.resources;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -9,8 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.techfix.app.R;
-import com.techfix.app.repository.FirestoreRepository;
+import com.example.techfix_mobile.R;
+import com.example.techfix_mobile.repository.FirestoreRepository;
 
 import java.util.ArrayList;
 import java.util.List;

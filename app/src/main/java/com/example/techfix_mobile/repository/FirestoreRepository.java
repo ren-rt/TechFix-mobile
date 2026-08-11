@@ -1,8 +1,8 @@
-package com.techfix.app.repository;
+package com.example.techfix_mobile.repository;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.techfix.app.admin.resources.ResourceType;
+import com.example.techfix_mobile.admin.resources.ResourceType;
 
 import java.util.ArrayList;
 import java.util.List;

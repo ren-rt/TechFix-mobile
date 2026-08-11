@@ -1,4 +1,4 @@
-package com.techfix.app.admin.resources;
+package com.example.techfix_mobile.admin.resources;
 
 public class ResourceField {
     public final String key;

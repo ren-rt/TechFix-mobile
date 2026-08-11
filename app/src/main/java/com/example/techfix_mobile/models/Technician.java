@@ -1,4 +1,4 @@
-package com.techfix.app.models;
+package com.example.techfix_mobile.models;
 
 public class Technician {
     private String technicianId;

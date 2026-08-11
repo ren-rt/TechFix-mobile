@@ -1,4 +1,4 @@
-package com.techfix.app.models;
+package com.example.techfix_mobile.models;
 
 public class Branch {
     private String branchId;

@@ -1,4 +1,4 @@
-package com.techfix.app.admin.resources;
+package com.example.techfix_mobile.admin.resources;
 
 import java.util.Arrays;
 import java.util.List;

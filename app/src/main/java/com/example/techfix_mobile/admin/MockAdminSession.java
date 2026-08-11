@@ -1,4 +1,4 @@
-package com.techfix.app.admin;
+package com.example.techfix_mobile.admin;
 
 // TEMPORARY stub — replace with real Firebase Auth user once Person 1's login is merged.
 public class MockAdminSession {

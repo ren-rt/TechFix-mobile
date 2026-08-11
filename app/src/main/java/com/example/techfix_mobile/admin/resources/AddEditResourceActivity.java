@@ -1,4 +1,4 @@
-package com.techfix.app.admin.resources;
+package com.example.techfix_mobile.admin.resources;
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -17,9 +17,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.techfix.app.R;
-import com.techfix.app.models.Branch;
-import com.techfix.app.repository.FirestoreRepository;
+import com.example.techfix_mobile.R;
+import com.example.techfix_mobile.models.Branch;
+import com.example.techfix_mobile.repository.FirestoreRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;

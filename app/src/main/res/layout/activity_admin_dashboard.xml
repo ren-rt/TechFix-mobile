@@ -22,6 +22,7 @@
         android:backgroundTint="#EEEE30"
         android:textColor="#080800"
         android:text="Manage Branches" />
+
     <Button
         android:id="@+id/btnManageTechnicians"
         android:layout_width="match_parent"
@@ -30,5 +31,23 @@
         android:backgroundTint="#EEEE30"
         android:textColor="#080800"
         android:text="Manage Technicians" />
+
+    <Button
+        android:id="@+id/btnManageParts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#EEEE30"
+        android:textColor="#080800"
+        android:text="Manage Spare Parts" />
+
+    <Button
+        android:id="@+id/btnManageCategories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#EEEE30"
+        android:textColor="#080800"
+        android:text="Manage Categories" />
 
 </LinearLayout>

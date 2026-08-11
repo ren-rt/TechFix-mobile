@@ -1,4 +1,4 @@
-package com.techfix.app.admin.resources;
+package com.example.techfix_mobile.admin.resources;
 
 public enum FieldType {
     TEXT,

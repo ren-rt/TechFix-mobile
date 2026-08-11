@@ -1,14 +1,14 @@
-package com.techfix.app.admin.dashboard;
+package com.example.techfix_mobile.admin.dashboard;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import com.techfix.app.R;
-import com.techfix.app.admin.MockAdminSession;
-import com.techfix.app.admin.resources.ManageResourceActivity;
-import com.techfix.app.admin.resources.ResourceType;
+import com.example.techfix_mobile.R;
+import com.example.techfix_mobile.admin.MockAdminSession;
+import com.example.techfix_mobile.admin.resources.ManageResourceActivity;
+import com.example.techfix_mobile.admin.resources.ResourceType;
 
 public class AdminDashboardActivity extends AppCompatActivity {
 
@@ -31,6 +31,20 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnManageTechnicians.setOnClickListener(v -> {
             Intent i = new Intent(this, ManageResourceActivity.class);
             i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.TECHNICIAN.name());
+            startActivity(i);
+        });
+
+        Button btnManageParts = findViewById(R.id.btnManageParts);
+        btnManageParts.setOnClickListener(v -> {
+            Intent i = new Intent(this, ManageResourceActivity.class);
+            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.PART.name());
+            startActivity(i);
+        });
+
+        Button btnManageCategories = findViewById(R.id.btnManageCategories);
+        btnManageCategories.setOnClickListener(v -> {
+            Intent i = new Intent(this, ManageResourceActivity.class);
+            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.CATEGORY.name());
             startActivity(i);
         });
     }

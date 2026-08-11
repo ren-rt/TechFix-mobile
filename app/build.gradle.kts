@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.techfix.app"
+    namespace = "com.example.techfix_mobile"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1

@@ -1,10 +1,9 @@
-package com.techfix.app;
+package com.example.techfix_mobile;
 
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import com.techfix.app.R;
-import com.techfix.app.admin.dashboard.AdminDashboardActivity;
+import com.example.techfix_mobile.admin.dashboard.AdminDashboardActivity;
 
 // TEMPORARY placeholder — Person 1 will replace this with real Splash/Login logic.
 public class MainActivity extends AppCompatActivity {
