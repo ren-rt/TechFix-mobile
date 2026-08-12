@@ -67,9 +67,9 @@ public class MyRequestsDao {
         values.put("device_details", r.getDeviceDetails());
         values.put("issue_desc", r.getIssueDesc());
         values.put("photo_local_path", r.getPhotoLocalPath());
-        values.put("photo_url", r.getPhotoUrl());
-        values.put("branch_id", r.getBranchId());
-        values.put("technician_id", r.getTechnicianId());
+        values.put("photo_url", r.getDevicePhotoUrl());
+        values.put("branch_id", r.getAssignedBranchId());
+        values.put("technician_id", r.getAssignedTechnicianId());
         values.put("status", r.getStatus());
         values.put("customer_lat", r.getCustomerLat());
         values.put("customer_lng", r.getCustomerLng());
@@ -82,6 +82,7 @@ public class MyRequestsDao {
     private RepairRequest fromCursor(Cursor cursor) {
         return new RepairRequest(
                 cursor.getString(cursor.getColumnIndexOrThrow("request_id")),
+                null, // customerId not stored locally — current_user table already tracks the logged-in user
                 cursor.getString(cursor.getColumnIndexOrThrow("service_id")),
                 cursor.getString(cursor.getColumnIndexOrThrow("category_id")),
                 cursor.getString(cursor.getColumnIndexOrThrow("device_details")),

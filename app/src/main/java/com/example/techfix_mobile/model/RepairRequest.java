@@ -1,26 +1,29 @@
 package com.example.techfix_mobile.model;
 
 public class RepairRequest {
-    private String requestId, serviceId, categoryId, deviceDetails, issueDesc;
-    private String photoLocalPath, photoUrl, branchId, technicianId, status, syncStatus;
+    private String requestId, customerId, serviceId, categoryId, deviceDetails, issueDesc;
+    private String devicePhotoUrl, assignedBranchId, assignedTechnicianId, status;
+    private String photoLocalPath;   // local-only, not written to Firestore
+    private String syncStatus;       // local-only, not written to Firestore
     private double customerLat, customerLng;
     private long requestedAt, completedAt;
 
-    public RepairRequest(String requestId, String serviceId, String categoryId,
+    public RepairRequest(String requestId, String customerId, String serviceId, String categoryId,
                          String deviceDetails, String issueDesc,
-                         String photoLocalPath, String photoUrl,
-                         String branchId, String technicianId, String status,
+                         String photoLocalPath, String devicePhotoUrl,
+                         String assignedBranchId, String assignedTechnicianId, String status,
                          double customerLat, double customerLng,
                          long requestedAt, long completedAt, String syncStatus) {
         this.requestId = requestId;
+        this.customerId = customerId;
         this.serviceId = serviceId;
         this.categoryId = categoryId;
         this.deviceDetails = deviceDetails;
         this.issueDesc = issueDesc;
         this.photoLocalPath = photoLocalPath;
-        this.photoUrl = photoUrl;
-        this.branchId = branchId;
-        this.technicianId = technicianId;
+        this.devicePhotoUrl = devicePhotoUrl;
+        this.assignedBranchId = assignedBranchId;
+        this.assignedTechnicianId = assignedTechnicianId;
         this.status = status;
         this.customerLat = customerLat;
         this.customerLng = customerLng;
@@ -30,14 +33,15 @@ public class RepairRequest {
     }
 
     public String getRequestId() { return requestId; }
+    public String getCustomerId() { return customerId; }
     public String getServiceId() { return serviceId; }
     public String getCategoryId() { return categoryId; }
     public String getDeviceDetails() { return deviceDetails; }
     public String getIssueDesc() { return issueDesc; }
     public String getPhotoLocalPath() { return photoLocalPath; }
-    public String getPhotoUrl() { return photoUrl; }
-    public String getBranchId() { return branchId; }
-    public String getTechnicianId() { return technicianId; }
+    public String getDevicePhotoUrl() { return devicePhotoUrl; }
+    public String getAssignedBranchId() { return assignedBranchId; }
+    public String getAssignedTechnicianId() { return assignedTechnicianId; }
     public String getStatus() { return status; }
     public double getCustomerLat() { return customerLat; }
     public double getCustomerLng() { return customerLng; }
@@ -46,8 +50,8 @@ public class RepairRequest {
     public String getSyncStatus() { return syncStatus; }
 
     public void setStatus(String status) { this.status = status; }
-    public void setBranchId(String branchId) { this.branchId = branchId; }
-    public void setTechnicianId(String technicianId) { this.technicianId = technicianId; }
-    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+    public void setAssignedBranchId(String assignedBranchId) { this.assignedBranchId = assignedBranchId; }
+    public void setAssignedTechnicianId(String assignedTechnicianId) { this.assignedTechnicianId = assignedTechnicianId; }
+    public void setDevicePhotoUrl(String devicePhotoUrl) { this.devicePhotoUrl = devicePhotoUrl; }
     public void setSyncStatus(String syncStatus) { this.syncStatus = syncStatus; }
 }
