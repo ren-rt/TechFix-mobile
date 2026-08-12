@@ -47,5 +47,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
             i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.CATEGORY.name());
             startActivity(i);
         });
+
+        Button btnIncomingRequests = findViewById(R.id.btnIncomingRequests);
+        btnIncomingRequests.setOnClickListener(v -> {
+            startActivity(new Intent(this, com.example.techfix_mobile.admin.requests.IncomingRequestsActivity.class));
+        });
     }
 }

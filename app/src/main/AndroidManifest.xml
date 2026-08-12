@@ -36,5 +36,8 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="PASTE_YOUR_REAL_MAPS_KEY_HERE" />
 
+        <activity android:name=".admin.requests.IncomingRequestsActivity" android:exported="false" />
+        <activity android:name=".admin.requests.RequestDetailActivity" android:exported="false" />
+
     </application>
 </manifest>
