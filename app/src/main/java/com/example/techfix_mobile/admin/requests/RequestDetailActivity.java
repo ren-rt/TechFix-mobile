@@ -1,20 +1,41 @@
 package com.example.techfix_mobile.admin.requests;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.models.RepairRequest;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RequestDetailActivity extends AppCompatActivity {
@@ -23,6 +44,7 @@ public class RequestDetailActivity extends AppCompatActivity {
 
     private static final String[] STATUS_OPTIONS =
             {"pending", "assigned", "in_progress", "completed", "ready_for_pickup"};
+    private static final int CAMERA_PERMISSION_CODE = 100;
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String requestId;
@@ -30,9 +52,17 @@ public class RequestDetailActivity extends AppCompatActivity {
 
     private TextView tvDeviceDetails, tvIssueDesc, tvCurrentStatus;
     private Spinner spinnerTechnician, spinnerStatus;
+    private ImageView imgBefore, imgAfter;
 
     private final List<String> technicianIds = new ArrayList<>();
     private final List<String> technicianNames = new ArrayList<>();
+
+    // Photo capture state
+    private String capturingType; // "before" or "after" — tracks which button was tapped
+    private Uri pendingPhotoUri;
+    private String pendingPhotoPath;
+
+    private ActivityResultLauncher<Uri> cameraLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,16 +77,137 @@ public class RequestDetailActivity extends AppCompatActivity {
         tvCurrentStatus = findViewById(R.id.tvCurrentStatus);
         spinnerTechnician = findViewById(R.id.spinnerTechnician);
         spinnerStatus = findViewById(R.id.spinnerStatus);
+        imgBefore = findViewById(R.id.imgBefore);
+        imgAfter = findViewById(R.id.imgAfter);
         Button btnSave = findViewById(R.id.btnSave);
+        Button btnCaptureBefore = findViewById(R.id.btnCaptureBefore);
+        Button btnCaptureAfter = findViewById(R.id.btnCaptureAfter);
 
         ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, STATUS_OPTIONS);
         statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerStatus.setAdapter(statusAdapter);
 
+        // Register the camera-capture callback once, up front
+        cameraLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+            if (success && pendingPhotoPath != null) {
+                handleCapturedPhoto(capturingType, pendingPhotoPath);
+            } else {
+                Toast.makeText(this, "Capture cancelled", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnCaptureBefore.setOnClickListener(v -> startCapture("before"));
+        btnCaptureAfter.setOnClickListener(v -> startCapture("after"));
+
         loadRequest();
+        loadExistingPhotos();
         btnSave.setOnClickListener(v -> saveChanges());
     }
+
+    // ================= PHOTO CAPTURE =================
+
+    private void startCapture(String type) {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+            return;
+        }
+        capturingType = type;
+        try {
+            File photoFile = createTempImageFile();
+            pendingPhotoPath = photoFile.getAbsolutePath();
+            pendingPhotoUri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", photoFile);
+            cameraLauncher.launch(pendingPhotoUri);
+        } catch (IOException e) {
+            Toast.makeText(this, "Could not create photo file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private File createTempImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        File cacheDir = getCacheDir();
+        return File.createTempFile("PHOTO_" + timeStamp, ".jpg", cacheDir);
+    }
+
+    private void handleCapturedPhoto(String type, String filePath) {
+        Bitmap original = BitmapFactory.decodeFile(filePath);
+        if (original == null) {
+            Toast.makeText(this, "Failed to read captured photo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Resize to 800px on the long side, per the guideline
+        int width = original.getWidth();
+        int height = original.getHeight();
+        int newWidth, newHeight;
+        if (width >= height) {
+            newWidth = 800;
+            newHeight = (int) (800.0 * height / width);
+        } else {
+            newHeight = 800;
+            newWidth = (int) (800.0 * width / height);
+        }
+        Bitmap resized = Bitmap.createScaledBitmap(original, newWidth, newHeight, true);
+
+        // Show preview immediately
+        if ("before".equals(type)) {
+            imgBefore.setImageBitmap(resized);
+        } else {
+            imgAfter.setImageBitmap(resized);
+        }
+
+        // Compress to JPEG quality ~50, Base64 encode
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        resized.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+        String base64 = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+
+        uploadPhoto(type, base64);
+    }
+
+    private void uploadPhoto(String type, String base64Data) {
+        Map<String, Object> photo = new HashMap<>();
+        photo.put("requestId", requestId);
+        photo.put("type", type); // "intake" | "before" | "after"
+        photo.put("data", base64Data);
+        photo.put("uploadedAt", FieldValue.serverTimestamp());
+
+        db.collection("repairPhotos").add(photo)
+                .addOnSuccessListener(docRef ->
+                        Toast.makeText(this, type + " photo saved", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Photo upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void loadExistingPhotos() {
+        // Show the most recent "before" and "after" photo, if any already exist for this request
+        loadPhotoOfType("before", imgBefore);
+        loadPhotoOfType("after", imgAfter);
+    }
+
+    private void loadPhotoOfType(String type, ImageView target) {
+        db.collection("repairPhotos")
+                .whereEqualTo("requestId", requestId)
+                .whereEqualTo("type", type)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) return;
+                    // Just show the first match — good enough for admin preview
+                    String base64 = snapshot.getDocuments().get(0).getString("data");
+                    if (base64 != null) {
+                        byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                        Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        target.setImageBitmap(bmp);
+                    }
+                });
+        // Note: no .addOnFailureListener surfaced to the user here — a missing composite index
+        // on (requestId, type) would fail silently; if photos never appear, check Logcat for
+        // a Firestore "index required" error and create it via the link Firestore provides.
+    }
+
+    // ================= STATUS / TECHNICIAN (unchanged from before) =================
 
     private void loadRequest() {
         db.collection("repairRequests").document(requestId).get()
@@ -73,7 +224,6 @@ public class RequestDetailActivity extends AppCompatActivity {
                     int statusIndex = indexOf(STATUS_OPTIONS, r.getStatus());
                     if (statusIndex >= 0) spinnerStatus.setSelection(statusIndex);
 
-                    // Only load technicians for the branch this request was auto-assigned to
                     if (r.getAssignedBranchId() != null) {
                         loadTechniciansForBranch(r.getAssignedBranchId(), r.getAssignedTechnicianId());
                     } else {
@@ -95,11 +245,9 @@ public class RequestDetailActivity extends AppCompatActivity {
                         Boolean available = doc.getBoolean("isAvailable");
                         technicianNames.add(name + (Boolean.TRUE.equals(available) ? " (Available)" : " (Busy)"));
                     }
-
                     if (technicianIds.isEmpty()) {
                         technicianNames.add("No technicians at this branch");
                     }
-
                     ArrayAdapter<String> techAdapter = new ArrayAdapter<>(
                             this, android.R.layout.simple_spinner_item, technicianNames);
                     techAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

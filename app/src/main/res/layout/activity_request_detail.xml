@@ -30,6 +30,69 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:textColor="#787868"
+            android:text="Before / After Photos:" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/imgBefore"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="#202018"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Before photo" />
+
+                <Button
+                    android:id="@+id/btnCaptureBefore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Capture Before"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/imgAfter"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="#202018"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="After photo" />
+
+                <Button
+                    android:id="@+id/btnCaptureAfter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Capture After"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textColor="#787868"
             android:text="Current status:" />
 
         <TextView
@@ -72,7 +135,7 @@
             android:layout_marginTop="24dp"
             android:backgroundTint="#EEEE30"
             android:textColor="#080800"
-            android:text="Save Changes" />
+            android:text="Update Status" />
 
     </LinearLayout>
 </ScrollView>
