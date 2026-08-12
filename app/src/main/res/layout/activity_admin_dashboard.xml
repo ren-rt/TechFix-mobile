@@ -49,6 +49,14 @@
         android:backgroundTint="#EEEE30"
         android:textColor="#080800"
         android:text="Manage Categories" />
+    <Button
+        android:id="@+id/btnManageServices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#EEEE30"
+        android:textColor="#080800"
+        android:text="Manage Repair Services" />
 
     <Button
         android:id="@+id/btnIncomingRequests"

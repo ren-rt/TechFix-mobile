@@ -48,6 +48,13 @@ public class AdminDashboardActivity extends AppCompatActivity {
             startActivity(i);
         });
 
+        Button btnManageServices = findViewById(R.id.btnManageServices);
+        btnManageServices.setOnClickListener(v -> {
+            Intent i = new Intent(this, ManageResourceActivity.class);
+            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.SERVICE.name());
+            startActivity(i);
+        });
+
         Button btnIncomingRequests = findViewById(R.id.btnIncomingRequests);
         btnIncomingRequests.setOnClickListener(v -> {
             startActivity(new Intent(this, com.example.techfix_mobile.admin.requests.IncomingRequestsActivity.class));
