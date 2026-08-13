@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.techfix_mobile.model.RepairService;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.model.Branch;
+import com.example.techfix_mobile.model.DeviceCategory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,6 +96,21 @@ public class RepairFirestoreRepository {
                         // also cross-check required part stock here before finalizing eligibility
                     })
                     .addOnFailureListener(callback::onError);
+        }).addOnFailureListener(callback::onError);
+    }
+
+    public interface OnCategoriesLoaded {
+        void onLoaded(List<DeviceCategory> categories);
+        void onError(Exception e);
+    }
+
+    public void fetchAllCategories(OnCategoriesLoaded callback) {
+        db.collection("deviceCategories").get().addOnSuccessListener(snapshot -> {
+            List<DeviceCategory> categories = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                categories.add(new DeviceCategory(doc.getId(), doc.getString("name")));
+            }
+            callback.onLoaded(categories);
         }).addOnFailureListener(callback::onError);
     }
 }
