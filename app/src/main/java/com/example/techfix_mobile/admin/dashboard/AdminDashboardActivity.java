@@ -2,15 +2,19 @@ package com.example.techfix_mobile.admin.dashboard;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.admin.MockAdminSession;
+import com.example.techfix_mobile.admin.requests.IncomingRequestsActivity;
 import com.example.techfix_mobile.admin.resources.ManageResourceActivity;
 import com.example.techfix_mobile.admin.resources.ResourceType;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AdminDashboardActivity extends AppCompatActivity {
+
+    private TextView tvPendingCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,44 +24,39 @@ public class AdminDashboardActivity extends AppCompatActivity {
         TextView tvWelcome = findViewById(R.id.tvWelcome);
         tvWelcome.setText("Welcome, " + MockAdminSession.ADMIN_NAME);
 
-        Button btnManageBranches = findViewById(R.id.btnManageBranches);
-        btnManageBranches.setOnClickListener(v -> {
-            Intent i = new Intent(this, ManageResourceActivity.class);
-            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.BRANCH.name());
-            startActivity(i);
-        });
+        tvPendingCount = findViewById(R.id.tvPendingCount);
 
-        Button btnManageTechnicians = findViewById(R.id.btnManageTechnicians);
-        btnManageTechnicians.setOnClickListener(v -> {
-            Intent i = new Intent(this, ManageResourceActivity.class);
-            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.TECHNICIAN.name());
-            startActivity(i);
-        });
+        CardView cardIncomingRequests = findViewById(R.id.cardIncomingRequests);
+        cardIncomingRequests.setOnClickListener(v ->
+                startActivity(new Intent(this, IncomingRequestsActivity.class)));
 
-        Button btnManageParts = findViewById(R.id.btnManageParts);
-        btnManageParts.setOnClickListener(v -> {
-            Intent i = new Intent(this, ManageResourceActivity.class);
-            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.PART.name());
-            startActivity(i);
-        });
+        findViewById(R.id.cardBranches).setOnClickListener(v -> openManage(ResourceType.BRANCH));
+        findViewById(R.id.cardTechnicians).setOnClickListener(v -> openManage(ResourceType.TECHNICIAN));
+        findViewById(R.id.cardParts).setOnClickListener(v -> openManage(ResourceType.PART));
+        findViewById(R.id.cardCategories).setOnClickListener(v -> openManage(ResourceType.CATEGORY));
+        findViewById(R.id.cardServices).setOnClickListener(v -> openManage(ResourceType.SERVICE));
+    }
 
-        Button btnManageCategories = findViewById(R.id.btnManageCategories);
-        btnManageCategories.setOnClickListener(v -> {
-            Intent i = new Intent(this, ManageResourceActivity.class);
-            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.CATEGORY.name());
-            startActivity(i);
-        });
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadPendingCount();
+    }
 
-        Button btnManageServices = findViewById(R.id.btnManageServices);
-        btnManageServices.setOnClickListener(v -> {
-            Intent i = new Intent(this, ManageResourceActivity.class);
-            i.putExtra(ManageResourceActivity.EXTRA_TYPE, ResourceType.SERVICE.name());
-            startActivity(i);
-        });
+    private void loadPendingCount() {
+        FirebaseFirestore.getInstance().collection("repairRequests")
+                .whereEqualTo("status", "pending")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    int count = snapshot.size();
+                    tvPendingCount.setText(String.valueOf(count));
+                })
+                .addOnFailureListener(e -> tvPendingCount.setText("—"));
+    }
 
-        Button btnIncomingRequests = findViewById(R.id.btnIncomingRequests);
-        btnIncomingRequests.setOnClickListener(v -> {
-            startActivity(new Intent(this, com.example.techfix_mobile.admin.requests.IncomingRequestsActivity.class));
-        });
+    private void openManage(ResourceType type) {
+        Intent i = new Intent(this, ManageResourceActivity.class);
+        i.putExtra(ManageResourceActivity.EXTRA_TYPE, type.name());
+        startActivity(i);
     }
 }
