@@ -9,6 +9,8 @@ import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
 import com.example.techfix_mobile.model.DeviceCategory;
 import com.example.techfix_mobile.model.RepairService;
+import android.content.Intent;
+import com.example.techfix_mobile.ui.servicedetail.ServiceDetailActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +35,14 @@ public class HomeActivity extends AppCompatActivity {
         rvServices.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new ServiceAdapter(serviceList, service -> {
-            // TODO: open ServiceDetailActivity, pass service.getServiceId()
-            Toast.makeText(this, "Clicked: " + service.getName(), Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(HomeActivity.this, ServiceDetailActivity.class);
+            intent.putExtra(ServiceDetailActivity.EXTRA_SERVICE_ID, service.getServiceId());
+            intent.putExtra(ServiceDetailActivity.EXTRA_CATEGORY_ID, service.getCategoryId());
+            intent.putExtra(ServiceDetailActivity.EXTRA_NAME, service.getName());
+            intent.putExtra(ServiceDetailActivity.EXTRA_DESCRIPTION, service.getDescription());
+            intent.putExtra(ServiceDetailActivity.EXTRA_PRICE, service.getPrice());
+            intent.putExtra(ServiceDetailActivity.EXTRA_EST_HOURS, service.getEstHours());
+            startActivity(intent);
         });
         rvServices.setAdapter(adapter);
 
