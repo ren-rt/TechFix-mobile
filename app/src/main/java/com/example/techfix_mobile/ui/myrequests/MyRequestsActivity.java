@@ -8,11 +8,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.techfix_mobile.R;
-//import com.example.techfix_mobile.data.RequestSyncManager;
+import com.example.techfix_mobile.data.RequestSyncManager;
 import com.example.techfix_mobile.db.DBHelper;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
-//import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuth;
 
 
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.List;
 public class MyRequestsActivity extends AppCompatActivity {
 
     private DBHelper dbHelper;
-    // private RequestSyncManager syncManager;  // TODO: uncomment once Firebase is added
+    private RequestSyncManager syncManager;
     private MyRequestsAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
 
@@ -56,8 +56,8 @@ public class MyRequestsActivity extends AppCompatActivity {
         fake3.setRequestedAt(System.currentTimeMillis());
         dbHelper.upsertRequest(fake3);
 
-        // syncManager = new RequestSyncManager(dbHelper);
-        //TODO: uncomment once Firebase is added
+        syncManager = new RequestSyncManager(dbHelper);
+
 
         RecyclerView recyclerView = findViewById(R.id.recyclerRequests);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -69,29 +69,26 @@ public class MyRequestsActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         swipeRefresh = findViewById(R.id.swipeRefresh);
-        swipeRefresh.setOnRefreshListener(() -> {
-            swipeRefresh.setRefreshing(false); // TODO: call syncThenLoad() once Firebase is added
-        });
+        swipeRefresh.setOnRefreshListener(this::syncThenLoad);
 
         findViewById(R.id.btnGoToHistory).setOnClickListener(v ->
                 startActivity(new Intent(this, com.example.techfix_mobile.ui.history.RepairHistoryActivity.class)));
 
         loadFromLocal(); // show cached data immediately
-        // syncThenLoad();  // TODO: uncomment once Firebase is added
+        syncThenLoad();  // then refresh from Firestore
     }
 
-    // TODO: uncomment once Firebase is added
-    // private void syncThenLoad() {
-    //     String uid = FirebaseAuth.getInstance().getUid();
-    //     if (uid == null) {
-    //         swipeRefresh.setRefreshing(false);
-    //         return;
-    //     }
-    //     syncManager.sync(uid, success -> runOnUiThread(() -> {
-    //         swipeRefresh.setRefreshing(false);
-    //         loadFromLocal();
-    //     }));
-    // }
+    private void syncThenLoad() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            swipeRefresh.setRefreshing(false);
+            return;
+        }
+        syncManager.sync(uid, success -> runOnUiThread(() -> {
+            swipeRefresh.setRefreshing(false);
+            loadFromLocal();
+        }));
+    }
 
     private void loadFromLocal() {
         List<RepairRequest> requests = dbHelper.getAllRequests();
