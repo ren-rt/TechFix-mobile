@@ -7,11 +7,11 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.techfix_mobile.R;
-// import com.example.techfix_mobile.data.PaymentRepository; // TODO: uncomment once Firebase is added
+import com.example.techfix_mobile.data.PaymentRepository;
 import com.example.techfix_mobile.db.DBHelper;
 import com.example.techfix_mobile.model.Payment;
 import com.example.techfix_mobile.model.RepairRequest;
-// import com.example.techfix_mobile.ui.payment.PaymentActivity; // TODO: uncomment once PaymentActivity is added
+import com.example.techfix_mobile.ui.payment.PaymentActivity;
 // import com.example.techfix_mobile.ui.receipt.ReceiptActivity; // TODO: uncomment once ReceiptActivity is added
 
 public class RequestDetailActivity extends AppCompatActivity {
@@ -19,7 +19,7 @@ public class RequestDetailActivity extends AppCompatActivity {
     public static final String EXTRA_REQUEST_ID = "requestId";
 
     private DBHelper dbHelper;
-    // private PaymentRepository paymentRepository; // TODO: uncomment once Firebase is added
+    private PaymentRepository paymentRepository;
     private RepairRequest request;
 
     @Override
@@ -28,7 +28,7 @@ public class RequestDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_request_detail);
 
         dbHelper = new DBHelper(this);
-        // paymentRepository = new PaymentRepository(); // TODO: uncomment once Firebase is added
+        paymentRepository = new PaymentRepository();
 
         String requestId = getIntent().getStringExtra(EXTRA_REQUEST_ID);
         request = dbHelper.getRequestById(requestId);
@@ -71,22 +71,17 @@ public class RequestDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // TODO: uncomment this whole block once PaymentActivity/ReceiptActivity/Firebase exist.
-        // For now just show the button so you can visually confirm it appears for
-        // completed/ready_for_pickup status.
-        payButton.setVisibility(android.view.View.VISIBLE);
-        payButton.setText("Pay Now (not wired up yet)");
-        payButton.setEnabled(false);
-
-        /*
         Payment existing = dbHelper.getPaymentForRequest(request.getRequestId());
         if (existing != null && Payment.STATUS_COMPLETED.equals(existing.getStatus())) {
-            payButton.setText("View Receipt");
-            payButton.setOnClickListener(v -> {
-                Intent i = new Intent(this, ReceiptActivity.class);
-                i.putExtra("paymentId", existing.getPaymentId());
-                startActivity(i);
-            });
+            // TODO: once ReceiptActivity is added, replace this with the real navigation:
+            // payButton.setText("View Receipt");
+            // payButton.setOnClickListener(v -> {
+            //     Intent i = new Intent(this, ReceiptActivity.class);
+            //     i.putExtra("paymentId", existing.getPaymentId());
+            //     startActivity(i);
+            // });
+            payButton.setText("Paid (receipt screen coming soon)");
+            payButton.setEnabled(false);
             return;
         }
 
@@ -106,6 +101,5 @@ public class RequestDetailActivity extends AppCompatActivity {
                 startActivity(i);
             });
         });
-        */
     }
 }
