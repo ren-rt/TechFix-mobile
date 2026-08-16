@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/ivDevicePhoto"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:background="@color/surface"
+            android:scaleType="centerCrop"
+            android:contentDescription="Device photo" />
+
+        <Button
+            android:id="@+id/btnCapturePhoto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Capture device photo"
+            android:backgroundTint="@color/surface_light"
+            android:textColor="@color/text_primary" />
+
+        <EditText
+            android:id="@+id/etDeviceDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Device details (e.g. Samsung A54)"
+            android:textColorHint="@color/on_surface_muted"
+            android:textColor="@color/text_primary"
+            android:background="@color/surface"
+            android:padding="12dp" />
+
+        <EditText
+            android:id="@+id/etIssueDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Describe the issue"
+            android:textColorHint="@color/on_surface_muted"
+            android:textColor="@color/text_primary"
+            android:background="@color/surface"
+            android:padding="12dp"
+            android:minLines="3"
+            android:inputType="textMultiLine" />
+
+        <Button
+            android:id="@+id/btnFindBranch"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            android:text="Find nearest branch"
+            android:textColor="@color/bg_darkest"
+            android:backgroundTint="@color/accent_bright" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>

@@ -3,9 +3,9 @@ package com.example.techfix_mobile.ui.servicedetail;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.techfix_mobile.R;
+import com.example.techfix_mobile.ui.submitrequest.SubmitRequestActivity;
 
 public class ServiceDetailActivity extends AppCompatActivity {
 
@@ -41,8 +41,10 @@ public class ServiceDetailActivity extends AppCompatActivity {
         tvEstTime.setText("Estimated time: " + estHours + " hrs");
 
         findViewById(R.id.btnBookRepair).setOnClickListener(v -> {
-            // TODO: open SubmitRequestActivity, pass serviceId + categoryId
-            Toast.makeText(this, "Book repair tapped for: " + serviceId, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, SubmitRequestActivity.class);
+            intent.putExtra(SubmitRequestActivity.EXTRA_SERVICE_ID, serviceId);
+            intent.putExtra(SubmitRequestActivity.EXTRA_CATEGORY_ID, categoryId);
+            startActivity(intent);
         });
     }
 }
