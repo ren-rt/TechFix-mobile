@@ -3,6 +3,7 @@ package com.example.techfix_mobile.ui.submitrequest;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.Intent;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
@@ -10,6 +11,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -24,6 +26,7 @@ import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.utils.AuthHelper;
 import com.example.techfix_mobile.utils.LocationHelper;
 import com.example.techfix_mobile.utils.NearestBranchResolver;
+import com.example.techfix_mobile.ui.confirmation.ConfirmationActivity;
 
 import java.io.File;
 import java.io.IOException;
@@ -191,10 +194,10 @@ public class SubmitRequestActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(String requestId) {
                         setLoading(false);
-                        Toast.makeText(SubmitRequestActivity.this,
-                                "Request submitted! Assigned to: " + branch.getName(),
-                                Toast.LENGTH_LONG).show();
-                        // TODO: navigate to ConfirmationActivity, pass requestId + branch name
+                        Intent intent = new Intent(SubmitRequestActivity.this, ConfirmationActivity.class);
+                        intent.putExtra(ConfirmationActivity.EXTRA_REQUEST_ID, requestId);
+                        intent.putExtra(ConfirmationActivity.EXTRA_BRANCH_NAME, branch.getName());
+                        startActivity(intent);
                         finish();
                     }
 
