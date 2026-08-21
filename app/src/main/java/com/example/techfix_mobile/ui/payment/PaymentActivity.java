@@ -40,7 +40,7 @@ public class PaymentActivity extends AppCompatActivity {
     // TODO: fill in with your sandbox Merchant ID from the PayHere dashboard.
     private static final String PAYHERE_MERCHANT_ID = "1237421";
     // Points at the deployed payhereNotify Cloud Function.
-    private static final String NOTIFY_URL = "REPLACE_WITH_CLOUD_FUNCTION_URL";
+    private static final String NOTIFY_URL = "https://untamed-promoter-blabber.ngrok-free.dev/techfix-mobile/us-central1/payhereNotify";
 
     private DBHelper dbHelper;
     private PaymentRepository paymentRepository;

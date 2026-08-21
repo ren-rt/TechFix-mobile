@@ -31,33 +31,7 @@ public class MyRequestsActivity extends AppCompatActivity {
 
         dbHelper = new DBHelper(this);
 
-        // TEMPORARY test data
-        RepairRequest fake1 = new RepairRequest();
-        fake1.setRequestId("test1");
-        fake1.setDeviceDetails("Samsung A125F - cracked screen");
-        fake1.setIssueDesc("Screen cracked after drop");
-        fake1.setStatus(RepairRequest.STATUS_PENDING);
-        fake1.setRequestedAt(System.currentTimeMillis());
-        dbHelper.upsertRequest(fake1);
-
-        RepairRequest fake2 = new RepairRequest();
-        fake2.setRequestId("test2");
-        fake2.setDeviceDetails("Dell Laptop - won't boot");
-        fake2.setIssueDesc("Blue screen on startup");
-        fake2.setStatus(RepairRequest.STATUS_IN_PROGRESS);
-        fake2.setRequestedAt(System.currentTimeMillis());
-        dbHelper.upsertRequest(fake2);
-
-        RepairRequest fake3 = new RepairRequest();
-        fake3.setRequestId("test3");
-        fake3.setDeviceDetails("iPhone 12 - battery issue");
-        fake3.setIssueDesc("Battery drains fast");
-        fake3.setStatus(RepairRequest.STATUS_COMPLETED);
-        fake3.setRequestedAt(System.currentTimeMillis());
-        dbHelper.upsertRequest(fake3);
-
         syncManager = new RequestSyncManager(dbHelper);
-
 
         RecyclerView recyclerView = findViewById(R.id.recyclerRequests);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

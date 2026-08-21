@@ -3,10 +3,9 @@ package com.example.techfix_mobile.data;
 import com.example.techfix_mobile.db.DBHelper;
 import com.example.techfix_mobile.model.Payment;
 import com.example.techfix_mobile.model.RepairRequest;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
-import java.util.List;
 
 /**
  * One-shot pull sync: Firestore -> SQLite. No live listener (per team decision) —
@@ -51,8 +50,26 @@ public class RequestSyncManager {
                 .get()
                 .addOnSuccessListener(paymentSnapshots -> {
                     for (QueryDocumentSnapshot doc : paymentSnapshots) {
-                        Payment p = doc.toObject(Payment.class);
+                        // Built manually instead of doc.toObject(Payment.class) because
+                        // paidAt is written by the Cloud Function as a Firestore Timestamp
+                        // (via FieldValue.serverTimestamp()), but our Payment model / SQLite
+                        // schema store it as a plain long (millis) — the two don't auto-convert.
+                        Payment p = new Payment();
                         p.setPaymentId(doc.getId());
+                        p.setRequestId(doc.getString("requestId"));
+                        p.setCustomerId(doc.getString("customerId"));
+                        Double amount = doc.getDouble("amount");
+                        p.setAmount(amount != null ? amount : 0.0);
+                        String currency = doc.getString("currency");
+                        p.setCurrency(currency != null ? currency : "LKR");
+                        String status = doc.getString("status");
+                        p.setStatus(status != null ? status : Payment.STATUS_PENDING);
+                        p.setPayherePaymentId(doc.getString("payherePaymentId"));
+                        p.setMethod(doc.getString("method"));
+
+                        Timestamp paidAtTs = doc.getTimestamp("paidAt");
+                        p.setPaidAt(paidAtTs != null ? paidAtTs.toDate().getTime() : 0L);
+
                         dbHelper.upsertPayment(p);
                     }
                     if (callback != null) callback.onSyncComplete(true);

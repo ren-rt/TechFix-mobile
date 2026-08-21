@@ -12,7 +12,7 @@ import com.example.techfix_mobile.db.DBHelper;
 import com.example.techfix_mobile.model.Payment;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.ui.payment.PaymentActivity;
-// import com.example.techfix_mobile.ui.receipt.ReceiptActivity; // TODO: uncomment once ReceiptActivity is added
+import com.example.techfix_mobile.ui.receipt.ReceiptActivity;
 
 public class RequestDetailActivity extends AppCompatActivity {
 
@@ -21,6 +21,7 @@ public class RequestDetailActivity extends AppCompatActivity {
     private DBHelper dbHelper;
     private PaymentRepository paymentRepository;
     private RepairRequest request;
+    private Payment existingPayment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +38,8 @@ public class RequestDetailActivity extends AppCompatActivity {
             return;
         }
 
+        existingPayment = dbHelper.getPaymentForRequest(request.getRequestId());
+
         bindTimeline();
         setupPayButton();
     }
@@ -48,17 +51,24 @@ public class RequestDetailActivity extends AppCompatActivity {
 
         title.setText(request.getDeviceDetails());
         issue.setText(request.getIssueDesc());
-        statusStep.setText(describeStatus(request.getStatus()));
+        statusStep.setText(describeStatus());
     }
 
-    private String describeStatus(String status) {
+    /** Combines repair status + payment status into one accurate line, instead of
+     *  showing "ready for payment" even after payment is already done. */
+    private String describeStatus() {
+        boolean paid = existingPayment != null && Payment.STATUS_COMPLETED.equals(existingPayment.getStatus());
+        String status = request.getStatus();
         if (status == null) return "Unknown";
+
         switch (status) {
             case RepairRequest.STATUS_PENDING: return "Pending — waiting for branch assignment";
             case RepairRequest.STATUS_ASSIGNED: return "Assigned to a technician";
             case RepairRequest.STATUS_IN_PROGRESS: return "Repair in progress";
-            case RepairRequest.STATUS_COMPLETED: return "Repair completed — ready for payment";
-            case RepairRequest.STATUS_READY_FOR_PICKUP: return "Ready for pickup";
+            case RepairRequest.STATUS_COMPLETED:
+                return paid ? "Repair completed — paid" : "Repair completed — ready for payment";
+            case RepairRequest.STATUS_READY_FOR_PICKUP:
+                return paid ? "Ready for pickup — paid" : "Ready for pickup — payment due";
             default: return status;
         }
     }
@@ -71,21 +81,20 @@ public class RequestDetailActivity extends AppCompatActivity {
             return;
         }
 
-        Payment existing = dbHelper.getPaymentForRequest(request.getRequestId());
-        if (existing != null && Payment.STATUS_COMPLETED.equals(existing.getStatus())) {
-            // TODO: once ReceiptActivity is added, replace this with the real navigation:
-            // payButton.setText("View Receipt");
-            // payButton.setOnClickListener(v -> {
-            //     Intent i = new Intent(this, ReceiptActivity.class);
-            //     i.putExtra("paymentId", existing.getPaymentId());
-            //     startActivity(i);
-            // });
-            payButton.setText("Paid (receipt screen coming soon)");
-            payButton.setEnabled(false);
+        if (existingPayment != null && Payment.STATUS_COMPLETED.equals(existingPayment.getStatus())) {
+            payButton.setVisibility(android.view.View.VISIBLE);
+            payButton.setText("View Receipt");
+            payButton.setEnabled(true);
+            payButton.setOnClickListener(v -> {
+                Intent i = new Intent(this, ReceiptActivity.class);
+                i.putExtra("paymentId", existingPayment.getPaymentId());
+                startActivity(i);
+            });
             return;
         }
 
         payButton.setVisibility(android.view.View.VISIBLE);
+        payButton.setText("Pay Now");
         payButton.setOnClickListener(v -> {
             payButton.setEnabled(false);
             paymentRepository.hasExistingPayment(request.getRequestId(), exists -> {
@@ -97,7 +106,7 @@ public class RequestDetailActivity extends AppCompatActivity {
                 }
                 Intent i = new Intent(this, PaymentActivity.class);
                 i.putExtra("requestId", request.getRequestId());
-                i.putExtra("amount", 0.0);
+                i.putExtra("amount", 1500.0); // TODO: replace with repairServices.basePrice once Person 2's data exists
                 startActivity(i);
             });
         });
