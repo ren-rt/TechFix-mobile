@@ -53,12 +53,12 @@ public class RequestDetailActivity extends AppCompatActivity {
     private TextView tvDeviceDetails, tvIssueDesc, tvCurrentStatus;
     private Spinner spinnerTechnician, spinnerStatus;
     private ImageView imgBefore, imgAfter;
+    private TextView tvPaymentStatus;
 
     private final List<String> technicianIds = new ArrayList<>();
     private final List<String> technicianNames = new ArrayList<>();
 
-    // Photo capture state
-    private String capturingType; // "before" or "after" — tracks which button was tapped
+    private String capturingType;
     private Uri pendingPhotoUri;
     private String pendingPhotoPath;
 
@@ -75,6 +75,7 @@ public class RequestDetailActivity extends AppCompatActivity {
         tvDeviceDetails = findViewById(R.id.tvDeviceDetails);
         tvIssueDesc = findViewById(R.id.tvIssueDesc);
         tvCurrentStatus = findViewById(R.id.tvCurrentStatus);
+        tvPaymentStatus = findViewById(R.id.tvPaymentStatus);
         spinnerTechnician = findViewById(R.id.spinnerTechnician);
         spinnerStatus = findViewById(R.id.spinnerStatus);
         imgBefore = findViewById(R.id.imgBefore);
@@ -88,7 +89,6 @@ public class RequestDetailActivity extends AppCompatActivity {
         statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerStatus.setAdapter(statusAdapter);
 
-        // Register the camera-capture callback once, up front
         cameraLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success && pendingPhotoPath != null) {
                 handleCapturedPhoto(capturingType, pendingPhotoPath);
@@ -101,8 +101,26 @@ public class RequestDetailActivity extends AppCompatActivity {
         btnCaptureAfter.setOnClickListener(v -> startCapture("after"));
 
         loadRequest();
+        loadPaymentStatus();
         loadExistingPhotos();
         btnSave.setOnClickListener(v -> saveChanges());
+    }
+
+    // ================= PAYMENT STATUS (read-only, Person 3's data) =================
+
+    private void loadPaymentStatus() {
+        db.collection("payments")
+                .whereEqualTo("requestId", requestId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        tvPaymentStatus.setText("Not paid yet");
+                        return;
+                    }
+                    String status = snapshot.getDocuments().get(0).getString("status");
+                    tvPaymentStatus.setText(status != null ? status : "unknown");
+                })
+                .addOnFailureListener(e -> tvPaymentStatus.setText("Unable to load"));
     }
 
     // ================= PHOTO CAPTURE =================
@@ -139,7 +157,6 @@ public class RequestDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // Resize to 800px on the long side, per the guideline
         int width = original.getWidth();
         int height = original.getHeight();
         int newWidth, newHeight;
@@ -152,14 +169,12 @@ public class RequestDetailActivity extends AppCompatActivity {
         }
         Bitmap resized = Bitmap.createScaledBitmap(original, newWidth, newHeight, true);
 
-        // Show preview immediately
         if ("before".equals(type)) {
             imgBefore.setImageBitmap(resized);
         } else {
             imgAfter.setImageBitmap(resized);
         }
 
-        // Compress to JPEG quality ~50, Base64 encode
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         resized.compress(Bitmap.CompressFormat.JPEG, 50, baos);
         String base64 = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
@@ -170,7 +185,7 @@ public class RequestDetailActivity extends AppCompatActivity {
     private void uploadPhoto(String type, String base64Data) {
         Map<String, Object> photo = new HashMap<>();
         photo.put("requestId", requestId);
-        photo.put("type", type); // "intake" | "before" | "after"
+        photo.put("type", type);
         photo.put("data", base64Data);
         photo.put("uploadedAt", FieldValue.serverTimestamp());
 
@@ -182,7 +197,6 @@ public class RequestDetailActivity extends AppCompatActivity {
     }
 
     private void loadExistingPhotos() {
-        // Show the most recent "before" and "after" photo, if any already exist for this request
         loadPhotoOfType("before", imgBefore);
         loadPhotoOfType("after", imgAfter);
     }
@@ -194,7 +208,6 @@ public class RequestDetailActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot.isEmpty()) return;
-                    // Just show the first match — good enough for admin preview
                     String base64 = snapshot.getDocuments().get(0).getString("data");
                     if (base64 != null) {
                         byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
@@ -202,12 +215,9 @@ public class RequestDetailActivity extends AppCompatActivity {
                         target.setImageBitmap(bmp);
                     }
                 });
-        // Note: no .addOnFailureListener surfaced to the user here — a missing composite index
-        // on (requestId, type) would fail silently; if photos never appear, check Logcat for
-        // a Firestore "index required" error and create it via the link Firestore provides.
     }
 
-    // ================= STATUS / TECHNICIAN (unchanged from before) =================
+    // ================= STATUS / TECHNICIAN =================
 
     private void loadRequest() {
         db.collection("repairRequests").document(requestId).get()
