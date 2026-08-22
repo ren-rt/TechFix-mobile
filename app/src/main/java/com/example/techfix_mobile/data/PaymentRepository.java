@@ -1,6 +1,7 @@
 package com.example.techfix_mobile.data;
 
 import com.example.techfix_mobile.model.Payment;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -8,11 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Handles the Firestore side of payments. The Cloud Function (payhereNotify) is the
- * source of truth for whether a payment actually succeeded — this class creates the
- * pending doc before launching PayHere, and re-reads the doc afterwards to confirm.
- */
 public class PaymentRepository {
 
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
@@ -23,15 +19,9 @@ public class PaymentRepository {
     }
 
     public interface OnPaymentChecked {
-        void onResult(Payment payment); // null if not found / still pending
+        void onResult(Payment payment); // null if not found
     }
 
-    /**
-     * Step 1 of the payment flow: create a `payments` doc with status "pending" BEFORE
-     * calling the PayHere SDK, so the webhook always has something to update.
-     * Guards against double-tap by using a fresh UUID order_id each call — the caller
-     * (PaymentActivity) should disable the Pay button immediately after tapping.
-     */
     public void createPendingPayment(String requestId, String customerId, double amount, OnOrderCreated cb) {
         String orderId = "order_" + UUID.randomUUID().toString().substring(0, 12);
 
@@ -48,12 +38,6 @@ public class PaymentRepository {
                 .addOnFailureListener(cb::onError);
     }
 
-    /**
-     * Step 2: after the PayHere SDK returns (onCompleted/onDismissed/onError), re-read
-     * the doc rather than trusting the SDK callback alone — the Cloud Function may not
-     * have written the final status yet, so callers should poll this a few times with
-     * a short delay if the first check still shows "pending".
-     */
     public void checkPaymentStatus(String orderId, OnPaymentChecked cb) {
         firestore.collection("payments").document(orderId)
                 .get()
@@ -62,14 +46,30 @@ public class PaymentRepository {
                         cb.onResult(null);
                         return;
                     }
-                    Payment p = doc.toObject(Payment.class);
-                    if (p != null) p.setPaymentId(doc.getId());
+                    // Built manually instead of doc.toObject(Payment.class) — paidAt is a
+                    // Firestore Timestamp once the webhook sets it, but our Payment model
+                    // stores it as a plain long, and toObject() can't auto-convert that.
+                    Payment p = new Payment();
+                    p.setPaymentId(doc.getId());
+                    p.setRequestId(doc.getString("requestId"));
+                    p.setCustomerId(doc.getString("customerId"));
+                    Double amount = doc.getDouble("amount");
+                    p.setAmount(amount != null ? amount : 0.0);
+                    String currency = doc.getString("currency");
+                    p.setCurrency(currency != null ? currency : "LKR");
+                    String status = doc.getString("status");
+                    p.setStatus(status != null ? status : Payment.STATUS_PENDING);
+                    p.setPayherePaymentId(doc.getString("payherePaymentId"));
+                    p.setMethod(doc.getString("method"));
+
+                    Timestamp paidAtTs = doc.getTimestamp("paidAt");
+                    p.setPaidAt(paidAtTs != null ? paidAtTs.toDate().getTime() : 0L);
+
                     cb.onResult(p);
                 })
                 .addOnFailureListener(e -> cb.onResult(null));
     }
 
-    /** Prevents double payment: checks if a non-failed payment already exists for this request. */
     public void hasExistingPayment(String requestId, java.util.function.Consumer<Boolean> cb) {
         firestore.collection("payments")
                 .whereEqualTo("requestId", requestId)

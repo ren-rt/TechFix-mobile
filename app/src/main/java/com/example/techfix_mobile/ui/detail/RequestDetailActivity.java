@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.techfix_mobile.R;
@@ -13,6 +14,7 @@ import com.example.techfix_mobile.model.Payment;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.ui.payment.PaymentActivity;
 import com.example.techfix_mobile.ui.receipt.ReceiptActivity;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class RequestDetailActivity extends AppCompatActivity {
 
@@ -20,6 +22,7 @@ public class RequestDetailActivity extends AppCompatActivity {
 
     private DBHelper dbHelper;
     private PaymentRepository paymentRepository;
+    private FirebaseFirestore firestore;
     private RepairRequest request;
     private Payment existingPayment;
 
@@ -30,6 +33,7 @@ public class RequestDetailActivity extends AppCompatActivity {
 
         dbHelper = new DBHelper(this);
         paymentRepository = new PaymentRepository();
+        firestore = FirebaseFirestore.getInstance();
 
         String requestId = getIntent().getStringExtra(EXTRA_REQUEST_ID);
         request = dbHelper.getRequestById(requestId);
@@ -54,8 +58,6 @@ public class RequestDetailActivity extends AppCompatActivity {
         statusStep.setText(describeStatus());
     }
 
-    /** Combines repair status + payment status into one accurate line, instead of
-     *  showing "ready for payment" even after payment is already done. */
     private String describeStatus() {
         boolean paid = existingPayment != null && Payment.STATUS_COMPLETED.equals(existingPayment.getStatus());
         String status = request.getStatus();
@@ -98,17 +100,48 @@ public class RequestDetailActivity extends AppCompatActivity {
         payButton.setOnClickListener(v -> {
             payButton.setEnabled(false);
             paymentRepository.hasExistingPayment(request.getRequestId(), exists -> {
-                payButton.setEnabled(true);
                 if (exists) {
-                    android.widget.Toast.makeText(this,
-                            "A payment for this request is already pending", android.widget.Toast.LENGTH_LONG).show();
+                    payButton.setEnabled(true);
+                    Toast.makeText(this,
+                            "A payment for this request is already pending", Toast.LENGTH_LONG).show();
                     return;
                 }
-                Intent i = new Intent(this, PaymentActivity.class);
-                i.putExtra("requestId", request.getRequestId());
-                i.putExtra("amount", 1500.0); // TODO: replace with repairServices.basePrice once Person 2's data exists
-                startActivity(i);
+                fetchServicePriceAndLaunchPayment(payButton);
             });
         });
+    }
+
+    /** Looks up the real price from repairServices in Firestore, using the request's
+     *  serviceId, instead of a hardcoded test amount. */
+    private void fetchServicePriceAndLaunchPayment(Button payButton) {
+        String serviceId = request.getServiceId();
+        if (serviceId == null || serviceId.isEmpty()) {
+            payButton.setEnabled(true);
+            Toast.makeText(this, "This request has no linked service — can't determine price", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        firestore.collection("repairServices").document(serviceId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    payButton.setEnabled(true);
+                    if (!doc.exists()) {
+                        Toast.makeText(this, "Service details not found", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    Double basePrice = doc.getDouble("basePrice");
+                    if (basePrice == null || basePrice <= 0) {
+                        Toast.makeText(this, "Invalid service price", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    Intent i = new Intent(this, PaymentActivity.class);
+                    i.putExtra("requestId", request.getRequestId());
+                    i.putExtra("amount", basePrice);
+                    startActivity(i);
+                })
+                .addOnFailureListener(e -> {
+                    payButton.setEnabled(true);
+                    Toast.makeText(this, "Could not load service price: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 }

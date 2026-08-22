@@ -143,11 +143,9 @@ public class PaymentActivity extends AppCompatActivity {
         paymentRepository.checkPaymentStatus(pendingOrderId, payment -> {
             if (payment != null && Payment.STATUS_COMPLETED.equals(payment.getStatus())) {
                 dbHelper.upsertPayment(payment);
-                // TODO: once ReceiptActivity is added, replace this with:
-                // Intent i = new Intent(this, ReceiptActivity.class);
-                // i.putExtra("paymentId", payment.getPaymentId());
-                // startActivity(i);
-                android.widget.Toast.makeText(this, "Payment successful! Receipt screen coming soon.", android.widget.Toast.LENGTH_LONG).show();
+                Intent i = new Intent(this, com.example.techfix_mobile.ui.receipt.ReceiptActivity.class);
+                i.putExtra("paymentId", payment.getPaymentId());
+                startActivity(i);
                 finish();
             } else if (payment != null && Payment.STATUS_FAILED.equals(payment.getStatus())) {
                 Toast.makeText(this, "Payment failed", Toast.LENGTH_LONG).show();
