@@ -8,7 +8,7 @@
         android:id="@+id/btnGoToHistory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="View Repair History (test)" />
+        android:text="Repair History" />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
