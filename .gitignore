@@ -13,16 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+.idea/
 
-*.iml
-.gradle/
-/local.properties
-/.idea/
-.DS_Store
-/build/
-/captures/
-.externalNativeBuild/
-.cxx/
-*.apk
-google-services.json
-functions/node_modules/
+.idea/
