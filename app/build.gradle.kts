@@ -1,12 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
+}
+
+val localProps = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProps.load(localPropertiesFile.inputStream())
 }
 
 android {
     namespace = "com.example.techfix_mobile"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.techfix_mobile"
@@ -16,6 +23,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        manifestPlaceholders["MAPS_API_KEY"] = localProps.getProperty("MAPS_API_KEY") ?: ""
     }
 
     buildTypes {
@@ -41,4 +50,27 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
+
+    // Google Maps + Location (Person 1 / Person 2)
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Osmdroid (Requirement for Person 1 Manual Tests)
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    // CameraX (Person 2)
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+
+    // PayHere Android SDK (Person 3)
+    implementation("com.github.PayHereDevs:payhere-android-sdk:v3.0.18")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
