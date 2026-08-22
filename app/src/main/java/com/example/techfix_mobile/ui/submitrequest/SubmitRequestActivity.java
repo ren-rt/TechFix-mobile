@@ -27,6 +27,7 @@ import com.example.techfix_mobile.utils.AuthHelper;
 import com.example.techfix_mobile.utils.LocationHelper;
 import com.example.techfix_mobile.utils.NearestBranchResolver;
 import com.example.techfix_mobile.ui.confirmation.ConfirmationActivity;
+import com.example.techfix_mobile.utils.PhotoStorageHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -169,25 +170,34 @@ public class SubmitRequestActivity extends AppCompatActivity {
 
     private void createRequest(double lat, double lng, Branch branch,
                                String deviceDetails, String issueDesc) {
+        String photoBase64;
+        try {
+            photoBase64 = PhotoStorageHelper.encodePhotoAsBase64(this, photoUri);
+        } catch (Exception e) {
+            setLoading(false);
+            Toast.makeText(this, "Failed to process photo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         AuthHelper.ensureSignedIn(new AuthHelper.OnAuthReady() {
             @Override
             public void onReady(String uid) {
                 RepairRequest request = new RepairRequest(
-                        null, // requestId assigned by Firestore
+                        null,
                         uid,
                         serviceId,
                         categoryId,
                         deviceDetails,
                         issueDesc,
-                        null, // photoLocalPath — local-only, not sent to Firestore
-                        null, // TODO: devicePhotoUrl — set once photo is uploaded to Firebase Storage
+                        null,           // photoLocalPath — local-only, not sent to Firestore
+                        photoBase64,    // devicePhotoUrl holds the base64 data URI for now
                         branch.getBranchId(),
-                        null, // assignedTechnicianId — set later by admin
+                        null,
                         "pending",
                         lat, lng,
                         System.currentTimeMillis(),
                         0,
-                        null // syncStatus — local-only
+                        null
                 );
 
                 repository.createRepairRequest(request, new RepairFirestoreRepository.OnRequestCreated() {
