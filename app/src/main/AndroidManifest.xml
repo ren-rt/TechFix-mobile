@@ -53,6 +53,12 @@
         <activity android:name="lk.payhere.androidsdk.PHMainActivity" android:exported="false" />
         <activity android:name=".ui.receipt.ReceiptActivity" android:exported="false" />
 
+        <activity android:name=".admin.dashboard.AdminDashboardActivity" android:exported="false" />
+        <activity android:name=".admin.resources.ManageResourceActivity" android:exported="false" />
+        <activity android:name=".admin.resources.AddEditResourceActivity" android:exported="false" />
+        <activity android:name=".admin.requests.IncomingRequestsActivity" android:exported="false" />
+        <activity android:name=".admin.requests.RequestDetailActivity" android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
