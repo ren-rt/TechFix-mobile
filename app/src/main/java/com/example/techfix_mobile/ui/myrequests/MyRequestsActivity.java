@@ -1,0 +1,69 @@
+package com.example.techfix_mobile.ui.myrequests;
+
+import android.content.Intent;
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.example.techfix_mobile.R;
+import com.example.techfix_mobile.data.RequestSyncManager;
+import com.example.techfix_mobile.DatabaseHelper;
+import com.example.techfix_mobile.model.RepairRequest;
+import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.List;
+
+public class MyRequestsActivity extends AppCompatActivity {
+
+    private DatabaseHelper dbHelper;
+    private RequestSyncManager syncManager;
+    private MyRequestsAdapter adapter;
+    private SwipeRefreshLayout swipeRefresh;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_my_requests);
+
+        dbHelper = new DatabaseHelper(this);
+        syncManager = new RequestSyncManager(dbHelper);
+
+        RecyclerView recyclerView = findViewById(R.id.recyclerRequests);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new MyRequestsAdapter(request -> {
+            Intent i = new Intent(this, RequestDetailActivity.class);
+            i.putExtra("requestId", request.getRequestId());
+            startActivity(i);
+        });
+        recyclerView.setAdapter(adapter);
+
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setOnRefreshListener(this::syncThenLoad);
+
+        findViewById(R.id.btnGoToHistory).setOnClickListener(v ->
+                startActivity(new Intent(this, com.example.techfix_mobile.ui.history.RepairHistoryActivity.class)));
+
+        loadFromLocal(); // show cached data immediately
+        syncThenLoad();  // then refresh from Firestore
+    }
+
+    private void syncThenLoad() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            swipeRefresh.setRefreshing(false);
+            return;
+        }
+        syncManager.sync(uid, success -> runOnUiThread(() -> {
+            swipeRefresh.setRefreshing(false);
+            loadFromLocal();
+        }));
+    }
+
+    private void loadFromLocal() {
+        List<RepairRequest> requests = dbHelper.getAllRequests();
+        adapter.submitList(requests);
+    }
+}

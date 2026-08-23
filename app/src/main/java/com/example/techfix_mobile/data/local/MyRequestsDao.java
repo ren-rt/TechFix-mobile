@@ -3,6 +3,7 @@ package com.example.techfix_mobile.data.local;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import com.example.techfix_mobile.DatabaseHelper;
 import com.example.techfix_mobile.model.RepairRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,23 +81,22 @@ public class MyRequestsDao {
     }
 
     private RepairRequest fromCursor(Cursor cursor) {
-        return new RepairRequest(
-                cursor.getString(cursor.getColumnIndexOrThrow("request_id")),
-                null, // customerId not stored locally — current_user table already tracks the logged-in user
-                cursor.getString(cursor.getColumnIndexOrThrow("service_id")),
-                cursor.getString(cursor.getColumnIndexOrThrow("category_id")),
-                cursor.getString(cursor.getColumnIndexOrThrow("device_details")),
-                cursor.getString(cursor.getColumnIndexOrThrow("issue_desc")),
-                cursor.getString(cursor.getColumnIndexOrThrow("photo_local_path")),
-                cursor.getString(cursor.getColumnIndexOrThrow("photo_url")),
-                cursor.getString(cursor.getColumnIndexOrThrow("branch_id")),
-                cursor.getString(cursor.getColumnIndexOrThrow("technician_id")),
-                cursor.getString(cursor.getColumnIndexOrThrow("status")),
-                cursor.getDouble(cursor.getColumnIndexOrThrow("customer_lat")),
-                cursor.getDouble(cursor.getColumnIndexOrThrow("customer_lng")),
-                cursor.getLong(cursor.getColumnIndexOrThrow("requested_at")),
-                cursor.getLong(cursor.getColumnIndexOrThrow("completed_at")),
-                cursor.getString(cursor.getColumnIndexOrThrow("sync_status"))
-        );
+        RepairRequest r = new RepairRequest();
+        r.setRequestId(cursor.getString(cursor.getColumnIndexOrThrow("request_id")));
+        r.setServiceId(cursor.getString(cursor.getColumnIndexOrThrow("service_id")));
+        r.setCategoryId(cursor.getString(cursor.getColumnIndexOrThrow("category_id")));
+        r.setDeviceDetails(cursor.getString(cursor.getColumnIndexOrThrow("device_details")));
+        r.setIssueDesc(cursor.getString(cursor.getColumnIndexOrThrow("issue_desc")));
+        r.setPhotoLocalPath(cursor.getString(cursor.getColumnIndexOrThrow("photo_local_path")));
+        r.setDevicePhotoUrl(cursor.getString(cursor.getColumnIndexOrThrow("photo_url")));
+        r.setAssignedBranchId(cursor.getString(cursor.getColumnIndexOrThrow("branch_id")));
+        r.setAssignedTechnicianId(cursor.getString(cursor.getColumnIndexOrThrow("technician_id")));
+        r.setStatus(cursor.getString(cursor.getColumnIndexOrThrow("status")));
+        r.setCustomerLat(cursor.getDouble(cursor.getColumnIndexOrThrow("customer_lat")));
+        r.setCustomerLng(cursor.getDouble(cursor.getColumnIndexOrThrow("customer_lng")));
+        r.setRequestedAt(cursor.getLong(cursor.getColumnIndexOrThrow("requested_at")));
+        r.setCompletedAt(cursor.getLong(cursor.getColumnIndexOrThrow("completed_at")));
+        r.setSyncStatus(cursor.getString(cursor.getColumnIndexOrThrow("sync_status")));
+        return r;
     }
 }

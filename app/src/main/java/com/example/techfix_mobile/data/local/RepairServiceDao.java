@@ -3,6 +3,7 @@ package com.example.techfix_mobile.data.local;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import com.example.techfix_mobile.DatabaseHelper;
 import com.example.techfix_mobile.model.RepairService;
 import java.util.ArrayList;
 import java.util.List;

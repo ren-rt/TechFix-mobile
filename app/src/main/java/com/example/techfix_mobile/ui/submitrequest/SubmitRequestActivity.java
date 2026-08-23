@@ -182,23 +182,19 @@ public class SubmitRequestActivity extends AppCompatActivity {
         AuthHelper.ensureSignedIn(new AuthHelper.OnAuthReady() {
             @Override
             public void onReady(String uid) {
-                RepairRequest request = new RepairRequest(
-                        null,
-                        uid,
-                        serviceId,
-                        categoryId,
-                        deviceDetails,
-                        issueDesc,
-                        null,           // photoLocalPath — local-only, not sent to Firestore
-                        photoBase64,    // devicePhotoUrl holds the base64 data URI for now
-                        branch.getBranchId(),
-                        null,
-                        "pending",
-                        lat, lng,
-                        System.currentTimeMillis(),
-                        0,
-                        null
-                );
+                RepairRequest request = new RepairRequest();
+                request.setCustomerId(uid);
+                request.setServiceId(serviceId);
+                request.setCategoryId(categoryId);
+                request.setDeviceDetails(deviceDetails);
+                request.setIssueDesc(issueDesc);
+                request.setDevicePhotoUrl(photoBase64);
+                request.setAssignedBranchId(branch.getBranchId());
+                request.setStatus(RepairRequest.STATUS_PENDING);
+                request.setCustomerLat(lat);
+                request.setCustomerLng(lng);
+                request.setRequestedAt(System.currentTimeMillis());
+                request.setCompletedAt(0);
 
                 repository.createRepairRequest(request, new RepairFirestoreRepository.OnRequestCreated() {
                     @Override
