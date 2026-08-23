@@ -67,7 +67,7 @@ public class RequestDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_request_detail);
+        setContentView(R.layout.activity_admin_request_detail);
         setTitle("Request Detail");
 
         requestId = getIntent().getStringExtra(EXTRA_REQUEST_ID);
