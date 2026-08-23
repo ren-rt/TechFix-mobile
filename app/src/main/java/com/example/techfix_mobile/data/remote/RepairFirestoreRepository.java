@@ -66,6 +66,7 @@ public class RepairFirestoreRepository {
                 .addOnSuccessListener(docRef -> callback.onSuccess(docRef.getId()))
                 .addOnFailureListener(callback::onError);
     }
+
     public interface OnBranchesLoaded {
         void onLoaded(List<Branch> branches, Set<String> availableBranchIds);
         void onError(Exception e);
@@ -80,7 +81,8 @@ public class RepairFirestoreRepository {
                         doc.getString("name"),
                         doc.getString("address"),
                         doc.getDouble("lat") != null ? doc.getDouble("lat") : 0.0,
-                        doc.getDouble("lng") != null ? doc.getDouble("lng") : 0.0
+                        doc.getDouble("lng") != null ? doc.getDouble("lng") : 0.0,
+                        doc.getString("contactNumber")
                 ));
             }
 

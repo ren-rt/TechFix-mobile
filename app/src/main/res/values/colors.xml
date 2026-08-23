@@ -17,4 +17,8 @@
     <color name="accent_bright">#D8D800</color>
     <color name="accent_highlight">#EEEE30</color>
     <color name="accent_pale">#F8FFD0</color>
+
+    <!-- Basics, from Person 1's auth screens -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>
