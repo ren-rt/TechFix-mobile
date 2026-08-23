@@ -6,23 +6,25 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import com.example.techfix_mobile.R;
-import com.example.techfix_mobile.admin.MockAdminSession;
 import com.example.techfix_mobile.admin.requests.IncomingRequestsActivity;
 import com.example.techfix_mobile.admin.resources.ManageResourceActivity;
 import com.example.techfix_mobile.admin.resources.ResourceType;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private TextView tvPendingCount;
+    private TextView tvWelcome;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
 
-        TextView tvWelcome = findViewById(R.id.tvWelcome);
-        tvWelcome.setText("Welcome, " + MockAdminSession.ADMIN_NAME);
+        tvWelcome = findViewById(R.id.tvWelcome);
+        tvWelcome.setText("Welcome");
+        loadAdminName();
 
         tvPendingCount = findViewById(R.id.tvPendingCount);
 
@@ -35,6 +37,21 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.cardParts).setOnClickListener(v -> openManage(ResourceType.PART));
         findViewById(R.id.cardCategories).setOnClickListener(v -> openManage(ResourceType.CATEGORY));
         findViewById(R.id.cardServices).setOnClickListener(v -> openManage(ResourceType.SERVICE));
+    }
+
+    private void loadAdminName() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            tvWelcome.setText("Welcome, Admin");
+            return;
+        }
+        FirebaseFirestore.getInstance().collection("users").document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String name = doc.getString("name");
+                    tvWelcome.setText("Welcome, " + (name != null ? name : "Admin"));
+                })
+                .addOnFailureListener(e -> tvWelcome.setText("Welcome, Admin"));
     }
 
     @Override
