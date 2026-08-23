@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.techfix_mobile.R;
-import com.example.techfix_mobile.models.RepairRequest;
+import com.example.techfix_mobile.model.RepairRequest;
 
 import java.util.ArrayList;
 import java.util.List;

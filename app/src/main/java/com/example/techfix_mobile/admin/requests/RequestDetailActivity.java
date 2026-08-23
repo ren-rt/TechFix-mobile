@@ -1,6 +1,5 @@
 package com.example.techfix_mobile.admin.requests;
 
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -22,7 +21,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.example.techfix_mobile.R;
-import com.example.techfix_mobile.models.RepairRequest;
+import com.example.techfix_mobile.model.RepairRequest;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;

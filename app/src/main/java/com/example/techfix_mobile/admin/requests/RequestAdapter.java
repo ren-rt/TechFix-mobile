@@ -8,7 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.techfix_mobile.R;
-import com.example.techfix_mobile.models.RepairRequest;
+import com.example.techfix_mobile.model.RepairRequest;
 
 import java.util.List;
 
