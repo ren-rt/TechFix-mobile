@@ -2,71 +2,77 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_dark">
+    android:background="@color/ink">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="22dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Repair Request"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.TechFix.Display"
+            android:layout_marginBottom="18dp" />
 
         <ImageView
             android:id="@+id/ivDevicePhoto"
             android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:background="@color/surface"
+            android:layout_height="140dp"
+            android:background="@drawable/bg_card"
             android:scaleType="centerCrop"
             android:contentDescription="Device photo" />
 
         <Button
             android:id="@+id/btnCapturePhoto"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Capture device photo"
-            android:backgroundTint="@color/surface_light"
-            android:textColor="@color/text_primary" />
+            android:layout_marginTop="10dp"
+            android:text="Capture Photo"
+            style="@style/Widget.TechFix.Button.Ghost" />
 
         <EditText
             android:id="@+id/etDeviceDetails"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="Device details (e.g. Samsung A54)"
-            android:textColorHint="@color/on_surface_muted"
+            android:layout_marginTop="18dp"
+            android:hint="Device Details (e.g. iPhone 12, cracked glass)"
             android:textColor="@color/text_primary"
-            android:background="@color/surface"
-            android:padding="12dp" />
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
 
         <EditText
             android:id="@+id/etIssueDesc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Describe the issue"
-            android:textColorHint="@color/on_surface_muted"
+            android:layout_marginTop="14dp"
+            android:hint="Issue Description"
             android:textColor="@color/text_primary"
-            android:background="@color/surface"
-            android:padding="12dp"
-            android:minLines="3"
-            android:inputType="textMultiLine" />
-
-        <Button
-            android:id="@+id/btnFindBranch"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="24dp"
-            android:text="Find nearest branch"
-            android:textColor="@color/bg_darkest"
-            android:backgroundTint="@color/accent_bright" />
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
 
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:layout_gravity="center"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnFindBranch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Find Nearest Branch"
+            style="@style/Widget.TechFix.Button.Primary" />
 
     </LinearLayout>
 </ScrollView>

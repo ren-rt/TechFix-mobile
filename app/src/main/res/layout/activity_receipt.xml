@@ -1,52 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
-    android:gravity="center_horizontal">
+    android:background="@color/ink">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Payment Successful"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp" />
-
-    <TextView
-        android:id="@+id/txtReceiptNo"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:padding="22dp"
+        android:gravity="center_horizontal">
 
-    <TextView
-        android:id="@+id/txtReceiptDevice"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="14sp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Payment Complete"
+            android:textSize="11sp"
+            android:letterSpacing="0.1"
+            android:textAllCaps="true"
+            android:textColor="@color/cyan"
+            android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
-    <TextView
-        android:id="@+id/txtReceiptAmount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="18dp"
+            android:layout_marginTop="16dp">
 
-    <TextView
-        android:id="@+id/txtReceiptStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="14sp" />
+            <LinearLayout style="@style/ReceiptRow">
+                <TextView style="@style/ReceiptRowLabel" android:text="Receipt No." />
+                <TextView android:id="@+id/txtReceiptNo" style="@style/ReceiptRowValue" />
+            </LinearLayout>
 
-    <Button
-        android:id="@+id/btnDownloadPdf"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Download PDF Receipt" />
+            <LinearLayout style="@style/ReceiptRow">
+                <TextView style="@style/ReceiptRowLabel" android:text="Device" />
+                <TextView android:id="@+id/txtReceiptDevice" style="@style/ReceiptRowValue" />
+            </LinearLayout>
 
-</LinearLayout>
+            <LinearLayout style="@style/ReceiptRow">
+                <TextView style="@style/ReceiptRowLabel" android:text="Amount" />
+                <TextView android:id="@+id/txtReceiptAmount" style="@style/ReceiptRowValue" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/ReceiptRow">
+                <TextView style="@style/ReceiptRowLabel" android:text="Status" />
+                <TextView android:id="@+id/txtReceiptStatus" style="@style/ReceiptRowValue" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnDownloadPdf"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Download PDF"
+            style="@style/Widget.TechFix.Button.Primary" />
+
+    </LinearLayout>
+</ScrollView>

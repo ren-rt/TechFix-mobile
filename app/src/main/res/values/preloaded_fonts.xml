@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/chakra_petch_bold</item>
+        <item>@font/chakra_petch_light</item>
+        <item>@font/jetbrains_mono</item>
+        <item>@font/manrope</item>
+        <item>@font/manrope_extralight</item>
+    </array>
+</resources>

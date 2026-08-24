@@ -6,4 +6,16 @@
     </style>
 
     <style name="Theme.Techfixmobile" parent="Base.Theme.TechFix" />
+    <style name="TextAppearance.TechFix.Display" parent="TextAppearance.AppCompat">
+        <item name="android:fontFamily">@font/chakra_petch_bold</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="TextAppearance.TechFix.Body" parent="TextAppearance.AppCompat">
+        <item name="android:fontFamily">@font/manrope</item>
+    </style>
+
+    <style name="TextAppearance.TechFix.Mono" parent="TextAppearance.AppCompat">
+        <item name="android:fontFamily">@font/jetbrains_mono</item>
+    </style>
 </resources>

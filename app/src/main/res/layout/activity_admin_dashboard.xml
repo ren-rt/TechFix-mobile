@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#080800">
+    android:orientation="vertical"
+    android:background="@color/ink">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/ink_2"
+        app:title="TechFix Admin"
+        app:titleTextColor="@color/text_primary"
+        app:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,7 +33,8 @@
             android:layout_height="wrap_content"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#F0F0E0" />
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.TechFix.Display" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -25,16 +42,15 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="20dp"
             android:textSize="13sp"
-            android:textColor="#787868"
+            android:textColor="@color/text_faint"
             android:text="TechFix Admin Panel" />
 
-        <!-- Highlighted card: Incoming Requests with live pending count -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardIncomingRequests"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="14dp"
-            app:cardBackgroundColor="#EEEE30"
+            app:cardBackgroundColor="@color/violet_soft"
             android:layout_marginBottom="20dp">
 
             <LinearLayout
@@ -46,10 +62,12 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.08"
                     android:textStyle="bold"
-                    android:textColor="#080800"
-                    android:text="INCOMING REQUESTS" />
+                    android:textColor="@color/text_primary"
+                    android:text="INCOMING REQUESTS"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
                 <TextView
                     android:id="@+id/tvPendingCount"
@@ -58,14 +76,15 @@
                     android:layout_marginTop="4dp"
                     android:textSize="32sp"
                     android:textStyle="bold"
-                    android:textColor="#080800"
-                    android:text="0" />
+                    android:textColor="@color/cyan"
+                    android:text="0"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="#303000"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_dim"
                     android:text="pending — tap to review" />
 
             </LinearLayout>
@@ -75,24 +94,26 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:textSize="13sp"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
             android:textStyle="bold"
-            android:textColor="#787868"
-            android:text="MANAGE RESOURCES" />
+            android:textColor="@color/text_faint"
+            android:text="MANAGE RESOURCES"
+            android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardBranches"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            app:cardBackgroundColor="#202018"
+            app:cardBackgroundColor="@color/panel"
             android:layout_marginBottom="8dp">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:textSize="15sp"
-                android:textColor="#F0F0E0"
+                android:textColor="@color/text_primary"
                 android:text="Branches" />
         </androidx.cardview.widget.CardView>
 
@@ -101,14 +122,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            app:cardBackgroundColor="#202018"
+            app:cardBackgroundColor="@color/panel"
             android:layout_marginBottom="8dp">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:textSize="15sp"
-                android:textColor="#F0F0E0"
+                android:textColor="@color/text_primary"
                 android:text="Technicians" />
         </androidx.cardview.widget.CardView>
 
@@ -117,14 +138,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            app:cardBackgroundColor="#202018"
+            app:cardBackgroundColor="@color/panel"
             android:layout_marginBottom="8dp">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:textSize="15sp"
-                android:textColor="#F0F0E0"
+                android:textColor="@color/text_primary"
                 android:text="Spare Parts" />
         </androidx.cardview.widget.CardView>
 
@@ -133,14 +154,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            app:cardBackgroundColor="#202018"
+            app:cardBackgroundColor="@color/panel"
             android:layout_marginBottom="8dp">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:textSize="15sp"
-                android:textColor="#F0F0E0"
+                android:textColor="@color/text_primary"
                 android:text="Device Categories" />
         </androidx.cardview.widget.CardView>
 
@@ -149,16 +170,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            app:cardBackgroundColor="#202018"
+            app:cardBackgroundColor="@color/panel"
             android:layout_marginBottom="8dp">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
                 android:textSize="15sp"
-                android:textColor="#F0F0E0"
+                android:textColor="@color/text_primary"
                 android:text="Repair Services" />
         </androidx.cardview.widget.CardView>
 
     </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</LinearLayout>

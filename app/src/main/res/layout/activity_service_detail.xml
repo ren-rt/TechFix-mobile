@@ -1,55 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_dark"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/ink">
 
-    <TextView
-        android:id="@+id/tvDetailName"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/text_primary"
-        android:textSize="22sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:padding="22dp">
 
-    <TextView
-        android:id="@+id/tvDetailDesc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/text_secondary"
-        android:textSize="15sp"
-        android:layout_marginTop="12dp" />
+        <TextView
+            android:id="@+id/tvDetailName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.TechFix.Display" />
 
-    <TextView
-        android:id="@+id/tvDetailPrice"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/accent_bright"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="20dp" />
+        <TextView
+            android:id="@+id/tvDetailDesc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="13sp"
+            android:textColor="@color/text_dim" />
 
-    <TextView
-        android:id="@+id/tvDetailEstTime"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:layout_marginTop="4dp" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="22dp">
 
-    <Space
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="30dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PRICE"
+                    android:textSize="10sp"
+                    android:textColor="@color/text_faint"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
+                <TextView
+                    android:id="@+id/tvDetailPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/cyan"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
+            </LinearLayout>
 
-    <Button
-        android:id="@+id/btnBookRepair"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:text="Book repair"
-        android:textColor="@color/bg_darkest"
-        android:backgroundTint="@color/accent_bright" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="EST. TIME"
+                    android:textSize="10sp"
+                    android:textColor="@color/text_faint"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
+                <TextView
+                    android:id="@+id/tvDetailEstTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textColor="@color/text_primary"
+                    android:textAppearance="@style/TextAppearance.TechFix.Mono" />
+            </LinearLayout>
+        </LinearLayout>
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnBookRepair"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:text="Book Repair"
+            style="@style/Widget.TechFix.Button.Primary" />
+
+    </LinearLayout>
+</ScrollView>

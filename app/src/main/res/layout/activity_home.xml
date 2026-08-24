@@ -1,73 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_dark"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:background="@color/ink">
 
-    <!-- Search bar -->
-    <EditText
-        android:id="@+id/etSearch"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:background="@color/surface"
-        android:hint="Search repair services"
-        android:textColorHint="@color/on_surface_muted"
-        android:textColor="@color/text_primary"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:inputType="text"
-        android:drawableStart="@android:drawable/ic_menu_search"
-        android:drawablePadding="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/ink_2"
+        app:title="TechFix"
+        app:titleTextColor="@color/text_primary"
+        app:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark" />
 
-    <!-- Category tiles -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="16dp">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Search repair services…"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
+
+        <Button
+            android:id="@+id/btnBranches"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="Branches"
+            android:textSize="12sp"
+            style="@style/Widget.TechFix.Button.Ghost" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvCategoriesLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Categories"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@id/etSearch"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_margin="20dp"
+        android:text="CATEGORIES"
+        android:letterSpacing="0.1"
+        android:textSize="10sp"
+        android:textColor="@color/text_faint"
+        android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCategories"
-        android:layout_width="0dp"
-        android:layout_height="90dp"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/tvCategoriesLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="horizontal" />
 
-    <!-- Services list -->
     <TextView
         android:id="@+id/tvServicesLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Repair Services"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@id/rvCategories"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_margin="20dp"
+        android:text="AVAILABLE SERVICES"
+        android:letterSpacing="0.1"
+        android:textSize="10sp"
+        android:textColor="@color/text_faint"
+        android:textAppearance="@style/TextAppearance.TechFix.Mono" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvServices"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/tvServicesLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:layout_weight="1"
+        android:layout_marginHorizontal="20dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

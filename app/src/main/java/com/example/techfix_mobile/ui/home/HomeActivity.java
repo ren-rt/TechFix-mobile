@@ -4,16 +4,25 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.techfix_mobile.BranchListActivity;
+import com.example.techfix_mobile.DatabaseHelper;
+import com.example.techfix_mobile.LoginActivity;
+import com.example.techfix_mobile.ProfileActivity;
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
 import com.example.techfix_mobile.model.DeviceCategory;
 import com.example.techfix_mobile.model.RepairService;
 import com.example.techfix_mobile.ui.servicedetail.ServiceDetailActivity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +48,13 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        Button btnBranches = findViewById(R.id.btnBranches);
+        btnBranches.setOnClickListener(v ->
+                startActivity(new Intent(HomeActivity.this, BranchListActivity.class)));
 
         rvServices = findViewById(R.id.rvServices);
         rvServices.setLayoutManager(new LinearLayoutManager(this));
@@ -127,6 +143,30 @@ public class HomeActivity extends AppCompatActivity {
                         "Failed to load categories: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.home_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_profile) {
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        } else if (id == R.id.action_logout) {
+            FirebaseAuth.getInstance().signOut();
+            new DatabaseHelper(this).clearUserData();
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void applyFilters() {

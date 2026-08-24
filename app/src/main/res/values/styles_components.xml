@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.TechFix.Button.Primary" parent="@android:style/Widget">
+        <item name="android:background">@drawable/bg_button_gradient</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="Widget.TechFix.Button.Ghost" parent="@android:style/Widget">
+        <item name="android:background">@drawable/bg_button_ghost</item>
+        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="Widget.TechFix.Card" parent="@android:style/Widget">
+        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <style name="Widget.TechFix.TextInputLayout" parent="@android:style/Widget">
+        <item name="android:background">@drawable/bg_input_field</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_faint</item>
+        <item name="android:padding">13dp</item>
+    </style>
+
+    <style name="ReceiptRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingVertical">10dp</item>
+    </style>
+    <style name="ReceiptRowLabel">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/text_faint</item>
+    </style>
+    <style name="ReceiptRowValue">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+</resources>

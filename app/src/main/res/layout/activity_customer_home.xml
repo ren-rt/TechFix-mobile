@@ -3,34 +3,57 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/ink"
+    android:padding="20dp"
+    android:gravity="center_vertical">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Customer Dashboard"
+        android:text="TechFix"
         android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:textAppearance="@style/TextAppearance.TechFix.Display"
+        android:layout_marginBottom="28dp" />
+
+    <Button
+        android:id="@+id/browseServicesBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Browse Services"
+        style="@style/Widget.TechFix.Button.Primary"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/myRequestsBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Requests"
+        style="@style/Widget.TechFix.Button.Ghost"
+        android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/viewBranchesBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="View Branches"
-        android:layout_marginTop="20dp" />
+        android:text="Our Branches"
+        style="@style/Widget.TechFix.Button.Ghost"
+        android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/profileBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="My Profile"
-        android:layout_marginTop="10dp" />
+        android:text="Profile"
+        style="@style/Widget.TechFix.Button.Ghost"
+        android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/logoutBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Logout"
-        android:layout_marginTop="10dp" />
+        style="@style/Widget.TechFix.Button.Ghost" />
 
 </LinearLayout>

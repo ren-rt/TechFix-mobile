@@ -29,3 +29,4 @@ google-services.json
 functions/node_modules/
 functions/.secret.local
 firebase-debug.log
+seed/serviceAccountKey.json

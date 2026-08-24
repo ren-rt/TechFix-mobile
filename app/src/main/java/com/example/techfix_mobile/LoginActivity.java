@@ -80,7 +80,7 @@ public class LoginActivity extends AppCompatActivity {
                             dbHelper.saveUser(uid, name, email, phone, role);
 
                             if ("admin".equals(role)) {
-                                startActivity(new Intent(LoginActivity.this, AdminHomeActivity.class));
+                                startActivity(new Intent(LoginActivity.this, com.example.techfix_mobile.admin.dashboard.AdminDashboardActivity.class));
                             } else {
                                 startActivity(new Intent(LoginActivity.this, com.example.techfix_mobile.ui.home.HomeActivity.class));
                             }

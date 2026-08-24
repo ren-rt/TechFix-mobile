@@ -46,7 +46,7 @@ public class MyRequestsAdapter extends RecyclerView.Adapter<MyRequestsAdapter.VH
     public void onBindViewHolder(@NonNull VH holder, int position) {
         RepairRequest r = items.get(position);
         holder.title.setText(r.getDeviceDetails() != null ? r.getDeviceDetails() : r.getRequestId());
-        holder.status.setText(formatStatus(r.getStatus()));
+        com.example.techfix_mobile.util.StatusChipBinder.bind(holder.status, r.getStatus());
         holder.date.setText(r.getRequestedAt() > 0 ? dateFormat.format(r.getRequestedAt()) : "");
         holder.itemView.setOnClickListener(v -> listener.onClick(r));
     }

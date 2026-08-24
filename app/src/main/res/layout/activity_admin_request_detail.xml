@@ -2,13 +2,13 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111108">
+    android:background="@color/ink">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <TextView
             android:id="@+id/tvDeviceDetails"
@@ -16,27 +16,28 @@
             android:layout_height="wrap_content"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#F0F0E0" />
+            android:textColor="@color/text_primary"
+            android:textAppearance="@style/TextAppearance.TechFix.Display" />
 
         <TextView
             android:id="@+id/tvIssueDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#C8C8B0" />
+            android:textColor="@color/text_dim" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="#787868"
+            android:layout_marginTop="22dp"
+            android:textColor="@color/text_faint"
             android:text="Before / After Photos:" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="10dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -49,7 +50,7 @@
                     android:id="@+id/imgBefore"
                     android:layout_width="120dp"
                     android:layout_height="120dp"
-                    android:background="#202018"
+                    android:background="@drawable/bg_card"
                     android:scaleType="centerCrop"
                     android:contentDescription="Before photo" />
 
@@ -57,9 +58,10 @@
                     android:id="@+id/btnCaptureBefore"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:text="Capture Before"
-                    android:textSize="12sp" />
+                    android:textSize="11sp"
+                    style="@style/Widget.TechFix.Button.Ghost" />
             </LinearLayout>
 
             <LinearLayout
@@ -73,7 +75,7 @@
                     android:id="@+id/imgAfter"
                     android:layout_width="120dp"
                     android:layout_height="120dp"
-                    android:background="#202018"
+                    android:background="@drawable/bg_card"
                     android:scaleType="centerCrop"
                     android:contentDescription="After photo" />
 
@@ -81,9 +83,10 @@
                     android:id="@+id/btnCaptureAfter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:text="Capture After"
-                    android:textSize="12sp" />
+                    android:textSize="11sp"
+                    style="@style/Widget.TechFix.Button.Ghost" />
             </LinearLayout>
 
         </LinearLayout>
@@ -91,8 +94,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="#787868"
+            android:layout_marginTop="22dp"
+            android:textColor="@color/text_faint"
             android:text="Current status:" />
 
         <TextView
@@ -100,13 +103,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textColor="#EEEE30" />
+            android:textColor="@color/cyan" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:textColor="#787868"
+            android:textColor="@color/text_faint"
             android:text="Payment status:" />
 
         <TextView
@@ -114,43 +117,44 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textColor="#C8C8B0"
+            android:textColor="@color/text_dim"
             android:text="Checking..." />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="#C8C8B0"
+            android:layout_marginTop="22dp"
+            android:textColor="@color/text_dim"
             android:text="Assign Technician:" />
 
         <Spinner
             android:id="@+id/spinnerTechnician"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_input_field" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="#C8C8B0"
+            android:layout_marginTop="22dp"
+            android:textColor="@color/text_dim"
             android:text="Update Status:" />
 
         <Spinner
             android:id="@+id/spinnerStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_input_field" />
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#EEEE30"
-            android:textColor="#080800"
-            android:text="Update Status" />
+            android:layout_marginTop="26dp"
+            android:text="Update Status"
+            style="@style/Widget.TechFix.Button.Primary" />
 
     </LinearLayout>
 </ScrollView>

@@ -24,6 +24,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
 
         <activity
             android:name=".SplashActivity"
@@ -39,7 +42,6 @@
         <activity android:name=".ProfileActivity" android:exported="false" />
         <activity android:name=".BranchListActivity" android:exported="false" />
         <activity android:name=".BranchMapActivity" android:exported="false" />
-        <activity android:name=".AdminHomeActivity" android:exported="false" />
 
         <activity android:name=".ui.home.HomeActivity" android:exported="false" />
         <activity android:name=".ui.servicedetail.ServiceDetailActivity" android:exported="false" />

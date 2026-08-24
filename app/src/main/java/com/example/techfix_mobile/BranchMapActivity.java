@@ -1,23 +1,23 @@
 package com.example.techfix_mobile;
 
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.ViewTreeObserver;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
 import com.example.techfix_mobile.model.Branch;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class BranchMapActivity extends AppCompatActivity {
 
     private MapView map = null;
-    private DatabaseHelper dbHelper;
+    private final RepairFirestoreRepository repository = new RepairFirestoreRepository();
 
     private final XYTileSource cartoLight = new XYTileSource(
             "CartoLight", 0, 19, 256, ".png",
@@ -32,7 +32,6 @@ public class BranchMapActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_branch_map_osm);
 
-        dbHelper = new DatabaseHelper(this);
         map = findViewById(R.id.map);
         map.setTileSource(cartoLight);
         map.setMultiTouchControls(true);
@@ -52,51 +51,44 @@ public class BranchMapActivity extends AppCompatActivity {
     }
 
     private void loadMarkers() {
-        List<Branch> branches = getBranchesFromLocal();
+        // Branches now come straight from Firestore (same source every other
+        // screen uses) instead of the local SQLite "branches" table, which
+        // nothing in the app ever wrote to.
+        repository.fetchBranchesWithAvailability(new RepairFirestoreRepository.OnBranchesLoaded() {
+            @Override
+            public void onLoaded(List<Branch> branches, Set<String> availableBranchIds) {
+                renderMarkers(branches);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Toast.makeText(BranchMapActivity.this,
+                        "Failed to load branches: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void renderMarkers(List<Branch> branches) {
         if (!branches.isEmpty()) {
             GeoPoint startPoint = null;
             for (Branch b : branches) {
                 GeoPoint point = new GeoPoint(b.getLat(), b.getLng());
-                Marker startMarker = new Marker(map);
-                startMarker.setPosition(point);
-                startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                startMarker.setTitle(b.getName());
-                startMarker.setSnippet(b.getAddress());
-                map.getOverlays().add(startMarker);
+                Marker marker = new Marker(map);
+                marker.setPosition(point);
+                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                marker.setTitle(b.getName());
+                marker.setSnippet(b.getAddress());
+                map.getOverlays().add(marker);
 
                 if (startPoint == null) startPoint = point;
             }
             if (startPoint != null) {
                 map.getController().setCenter(startPoint);
             }
+        } else {
+            Toast.makeText(this, "No branches found", Toast.LENGTH_SHORT).show();
         }
         map.invalidate();
-    }
-
-    private List<Branch> getBranchesFromLocal() {
-        List<Branch> list = new ArrayList<>();
-        SQLiteDatabase sqlDb = dbHelper.getReadableDatabase();
-        Cursor cursor = sqlDb.query("branches", null, null, null, null, null, null);
-        if (cursor.moveToFirst()) {
-            do {
-                String id = cursor.getString(cursor.getColumnIndexOrThrow("branch_id"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                String address = cursor.getString(cursor.getColumnIndexOrThrow("address"));
-                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow("lat"));
-                double lng = cursor.getDouble(cursor.getColumnIndexOrThrow("lng"));
-
-                String contact = "";
-                try {
-                    contact = cursor.getString(cursor.getColumnIndexOrThrow("contact_number"));
-                } catch (Exception e) {
-                    contact = cursor.getString(cursor.getColumnIndexOrThrow("phone"));
-                }
-
-                list.add(new Branch(id, name, address, lat, lng, contact));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return list;
     }
 
     @Override

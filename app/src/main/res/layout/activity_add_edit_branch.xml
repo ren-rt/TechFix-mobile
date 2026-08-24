@@ -4,46 +4,52 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111108">
+    android:background="@color/ink">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <EditText
             android:id="@+id/etName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Branch Name"
-            android:textColor="#F0F0E0"
-            android:textColorHint="#787868" />
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
 
         <EditText
             android:id="@+id/etAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:hint="Address"
-            android:textColor="#F0F0E0"
-            android:textColorHint="#787868" />
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
 
         <EditText
             android:id="@+id/etContact"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:inputType="phone"
             android:hint="Contact Number"
-            android:textColor="#F0F0E0"
-            android:textColorHint="#787868" />
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_faint"
+            android:background="@drawable/bg_input_field"
+            android:padding="13dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textColor="#C8C8B0"
+            android:layout_marginTop="20dp"
+            android:textColor="@color/text_dim"
             android:text="Tap on the map to set branch location:" />
 
         <TextView
@@ -51,7 +57,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="#787868"
+            android:textColor="@color/text_faint"
+            android:textAppearance="@style/TextAppearance.TechFix.Mono"
             android:text="No location selected" />
 
         <fragment
@@ -59,17 +66,16 @@
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="300dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             tools:layout="@layout/activity_add_edit_branch" />
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="#EEEE30"
-            android:textColor="#080800"
-            android:text="Save Branch" />
+            android:layout_marginTop="22dp"
+            android:text="Save Branch"
+            style="@style/Widget.TechFix.Button.Primary" />
 
     </LinearLayout>
 </ScrollView>

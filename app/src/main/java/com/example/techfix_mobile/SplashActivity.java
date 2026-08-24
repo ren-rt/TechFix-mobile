@@ -53,9 +53,9 @@ public class SplashActivity extends AppCompatActivity {
                     dbHelper.saveUser(uid, name, email, phone, role);
 
                     if ("admin".equals(role)) {
-                        startActivity(new Intent(SplashActivity.this, AdminHomeActivity.class));
+                        startActivity(new Intent(SplashActivity.this, com.example.techfix_mobile.admin.dashboard.AdminDashboardActivity.class));
                     } else {
-                        startActivity(new Intent(SplashActivity.this, CustomerHomeActivity.class));
+                        startActivity(new Intent(SplashActivity.this, com.example.techfix_mobile.ui.home.HomeActivity.class));
                     }
                     finish();
                 } else {
@@ -84,9 +84,9 @@ public class SplashActivity extends AppCompatActivity {
             String role = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ROLE));
             cursor.close();
             if ("admin".equals(role)) {
-                startActivity(new Intent(SplashActivity.this, AdminHomeActivity.class));
+                startActivity(new Intent(SplashActivity.this, com.example.techfix_mobile.admin.dashboard.AdminDashboardActivity.class));
             } else {
-                startActivity(new Intent(SplashActivity.this, CustomerHomeActivity.class));
+                startActivity(new Intent(SplashActivity.this, com.example.techfix_mobile.ui.home.HomeActivity.class));
             }
             finish();
         } else {

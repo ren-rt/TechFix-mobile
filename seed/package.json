@@ -1,0 +1,13 @@
+{
+  "name": "techfix-seed",
+  "private": true,
+  "version": "1.0.0",
+  "description": "One-time admin script to reset TechFix Firestore catalog data and create demo accounts. Not deployed — run locally only.",
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0"
+  }
+}
