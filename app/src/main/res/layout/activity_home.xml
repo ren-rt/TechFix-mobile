@@ -83,4 +83,6 @@
         android:layout_weight="1"
         android:layout_marginHorizontal="20dp" />
 
+    <include layout="@layout/bottom_nav" />
+
 </LinearLayout>

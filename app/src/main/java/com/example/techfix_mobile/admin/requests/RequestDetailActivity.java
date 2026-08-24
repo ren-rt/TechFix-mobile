@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -51,7 +52,7 @@ public class RequestDetailActivity extends AppCompatActivity {
 
     private TextView tvDeviceDetails, tvIssueDesc, tvCurrentStatus;
     private Spinner spinnerTechnician, spinnerStatus;
-    private ImageView imgBefore, imgAfter;
+    private ImageView imgBefore, imgAfter, imgCustomerPhoto;
     private TextView tvPaymentStatus;
 
     private final List<String> technicianIds = new ArrayList<>();
@@ -79,6 +80,7 @@ public class RequestDetailActivity extends AppCompatActivity {
         spinnerStatus = findViewById(R.id.spinnerStatus);
         imgBefore = findViewById(R.id.imgBefore);
         imgAfter = findViewById(R.id.imgAfter);
+        imgCustomerPhoto = findViewById(R.id.imgCustomerPhoto);
         Button btnSave = findViewById(R.id.btnSave);
         Button btnCaptureBefore = findViewById(R.id.btnCaptureBefore);
         Button btnCaptureAfter = findViewById(R.id.btnCaptureAfter);
@@ -122,16 +124,34 @@ public class RequestDetailActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> tvPaymentStatus.setText("Unable to load"));
     }
 
+    private void bindCustomerPhoto(String photoUrl) {
+        if (photoUrl == null || !photoUrl.startsWith("data:image")) {
+            imgCustomerPhoto.setVisibility(android.view.View.GONE);
+            return;
+        }
+        try {
+            String base64 = photoUrl.substring(photoUrl.indexOf(',') + 1);
+            byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
+            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (bmp != null) {
+                imgCustomerPhoto.setImageBitmap(bmp);
+                imgCustomerPhoto.setVisibility(android.view.View.VISIBLE);
+            }
+        } catch (Exception e) {
+            imgCustomerPhoto.setVisibility(android.view.View.GONE);
+        }
+    }
+
     // ================= PHOTO CAPTURE =================
 
     private void startCapture(String type) {
+        capturingType = type;
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
             return;
         }
-        capturingType = type;
         try {
             File photoFile = createTempImageFile();
             pendingPhotoPath = photoFile.getAbsolutePath();
@@ -140,6 +160,19 @@ public class RequestDetailActivity extends AppCompatActivity {
             cameraLauncher.launch(pendingPhotoUri);
         } catch (IOException e) {
             Toast.makeText(this, "Could not create photo file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCapture(capturingType);
+            } else {
+                Toast.makeText(this, "Camera permission is required to capture photos", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -229,6 +262,7 @@ public class RequestDetailActivity extends AppCompatActivity {
                     tvDeviceDetails.setText(r.getDeviceDetails() != null ? r.getDeviceDetails() : "Device N/A");
                     tvIssueDesc.setText(r.getIssueDesc() != null ? r.getIssueDesc() : "");
                     tvCurrentStatus.setText(r.getStatus() != null ? r.getStatus() : "pending");
+                    bindCustomerPhoto(r.getDevicePhotoUrl());
 
                     int statusIndex = indexOf(STATUS_OPTIONS, r.getStatus());
                     if (statusIndex >= 0) spinnerStatus.setSelection(statusIndex);
@@ -275,20 +309,43 @@ public class RequestDetailActivity extends AppCompatActivity {
         if (currentRequest == null) return;
 
         String selectedStatus = STATUS_OPTIONS[spinnerStatus.getSelectedItemPosition()];
+        String previousTechnicianId = currentRequest.getAssignedTechnicianId();
+
+        String newTechnicianId = null;
+        int techPos = spinnerTechnician.getSelectedItemPosition();
+        if (techPos >= 0 && techPos < technicianIds.size()) {
+            newTechnicianId = technicianIds.get(techPos);
+        }
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("status", selectedStatus);
-
-        int techPos = spinnerTechnician.getSelectedItemPosition();
-        if (techPos >= 0 && techPos < technicianIds.size()) {
-            updates.put("assignedTechnicianId", technicianIds.get(techPos));
+        if (newTechnicianId != null) {
+            updates.put("assignedTechnicianId", newTechnicianId);
         }
-
         if ("completed".equals(selectedStatus)) {
             updates.put("completedAt", System.currentTimeMillis());
         }
 
-        db.collection("repairRequests").document(requestId).update(updates)
+        boolean jobFinished = "completed".equals(selectedStatus) || "ready_for_pickup".equals(selectedStatus);
+        boolean technicianChanged = newTechnicianId != null && !newTechnicianId.equals(previousTechnicianId);
+
+        com.google.firebase.firestore.WriteBatch batch = db.batch();
+        batch.update(db.collection("repairRequests").document(requestId), updates);
+
+        // Keep technician availability honest: freeing up whoever's no longer
+        // on this job, marking whoever newly picked it up as busy, and freeing
+        // the current technician again once the job is actually done.
+        if (technicianChanged && previousTechnicianId != null) {
+            batch.update(db.collection("technicians").document(previousTechnicianId),
+                    "isAvailable", true);
+        }
+        String effectiveTechnicianId = newTechnicianId != null ? newTechnicianId : previousTechnicianId;
+        if (effectiveTechnicianId != null) {
+            batch.update(db.collection("technicians").document(effectiveTechnicianId),
+                    "isAvailable", jobFinished);
+        }
+
+        batch.commit()
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
                     finish();

@@ -8,25 +8,22 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.techfix_mobile.R;
-import com.example.techfix_mobile.models.Branch;
+import com.example.techfix_mobile.model.Branch;
 import com.example.techfix_mobile.repository.FirestoreRepository;
+import org.osmdroid.tileprovider.tilesource.XYTileSource;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AddEditResourceActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class AddEditResourceActivity extends AppCompatActivity {
 
     public static final String EXTRA_TYPE = "resource_type";
     public static final String EXTRA_ID = "resource_id";
@@ -38,7 +35,8 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
     // ---- Branch-specific (map) path ----
     private EditText etName, etAddress, etContact;
     private TextView tvLatLng;
-    private GoogleMap map;
+    private MapView map;
+    private Marker branchMarker;
     private Double selectedLat, selectedLng;
 
     // ---- Generic dynamic-field path ----
@@ -73,27 +71,44 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
         tvLatLng = findViewById(R.id.tvLatLng);
         Button btnSave = findViewById(R.id.btnSave);
 
-        SupportMapFragment mapFragment = (SupportMapFragment)
-                getSupportFragmentManager().findFragmentById(R.id.mapFragment);
-        if (mapFragment != null) mapFragment.getMapAsync(this);
+        map = findViewById(R.id.map);
+        map.setTileSource(new XYTileSource(
+                "CartoLight", 0, 19, 256, ".png",
+                new String[]{
+                        "https://a.basemaps.cartocdn.com/light_all/",
+                        "https://b.basemaps.cartocdn.com/light_all/",
+                        "https://c.basemaps.cartocdn.com/light_all/"
+                }));
+        map.setMultiTouchControls(true);
+        GeoPoint defaultPoint = new GeoPoint(6.9271, 79.8612);
+        map.getController().setZoom(10.0);
+        map.getController().setCenter(defaultPoint);
+
+        org.osmdroid.events.MapEventsReceiver receiver = new org.osmdroid.events.MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                selectedLat = p.getLatitude();
+                selectedLng = p.getLongitude();
+                if (branchMarker != null) map.getOverlays().remove(branchMarker);
+                branchMarker = new Marker(map);
+                branchMarker.setPosition(p);
+                branchMarker.setTitle("Branch Location");
+                map.getOverlays().add(branchMarker);
+                tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", p.getLatitude(), p.getLongitude()));
+                map.invalidate();
+                return true;
+            }
+
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        };
+        map.getOverlays().add(new org.osmdroid.views.overlay.MapEventsOverlay(receiver));
 
         if (editingId != null) loadExistingBranch();
 
         btnSave.setOnClickListener(v -> saveBranch());
-    }
-
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        map = googleMap;
-        LatLng defaultPoint = new LatLng(6.9271, 79.8612);
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPoint, 10));
-        map.setOnMapClickListener(latLng -> {
-            selectedLat = latLng.latitude;
-            selectedLng = latLng.longitude;
-            map.clear();
-            map.addMarker(new MarkerOptions().position(latLng).title("Branch Location"));
-            tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", latLng.latitude, latLng.longitude));
-        });
     }
 
     private void loadExistingBranch() {
@@ -108,12 +123,15 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
                     selectedLat = b.getLat();
                     selectedLng = b.getLng();
                     tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", b.getLat(), b.getLng()));
-                    if (map != null) {
-                        LatLng point = new LatLng(b.getLat(), b.getLng());
-                        map.clear();
-                        map.addMarker(new MarkerOptions().position(point));
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 13));
-                    }
+                    GeoPoint point = new GeoPoint(b.getLat(), b.getLng());
+                    if (branchMarker != null) map.getOverlays().remove(branchMarker);
+                    branchMarker = new Marker(map);
+                    branchMarker.setPosition(point);
+                    branchMarker.setTitle(b.getName());
+                    map.getOverlays().add(branchMarker);
+                    map.getController().setCenter(point);
+                    map.getController().setZoom(14.0);
+                    map.invalidate();
                 });
     }
 
@@ -147,6 +165,18 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
                 Toast.makeText(AddEditResourceActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (map != null) map.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (map != null) map.onPause();
     }
 
     // ================= GENERIC (Technician, and future types) FORM =================

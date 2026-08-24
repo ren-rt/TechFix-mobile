@@ -40,6 +40,7 @@ public class RequestSyncManager {
                     syncPayments(customerUid, callback);
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("RequestSync", "Failed to sync repairRequests", e);
                     if (callback != null) callback.onSyncComplete(false);
                 });
     }
@@ -75,6 +76,7 @@ public class RequestSyncManager {
                     if (callback != null) callback.onSyncComplete(true);
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("RequestSync", "Failed to sync payments", e);
                     if (callback != null) callback.onSyncComplete(false);
                 });
     }

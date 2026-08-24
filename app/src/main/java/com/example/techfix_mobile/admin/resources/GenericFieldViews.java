@@ -32,11 +32,21 @@ public class GenericFieldViews {
                     return ((EditText) inputView).getText().toString().trim();
                 case NUMBER_INT: {
                     String s = ((EditText) inputView).getText().toString().trim();
-                    return s.isEmpty() ? 0 : Integer.parseInt(s);
+                    if (s.isEmpty()) return 0;
+                    try {
+                        return Integer.parseInt(s);
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
                 }
                 case NUMBER_DECIMAL: {
                     String s = ((EditText) inputView).getText().toString().trim();
-                    return s.isEmpty() ? 0.0 : Double.parseDouble(s);
+                    if (s.isEmpty()) return 0.0;
+                    try {
+                        return Double.parseDouble(s);
+                    } catch (NumberFormatException e) {
+                        return 0.0;
+                    }
                 }
                 case BOOLEAN:
                     return ((Switch) inputView).isChecked();

@@ -1,0 +1,1226 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 485ce0d..988fbb6 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -27,6 +27,13 @@ android {
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+ 
+         manifestPlaceholders["MAPS_API_KEY"] = localProps.getProperty("MAPS_API_KEY") ?: ""
++
++        // PayHere server-to-server notify webhook. During local dev this points at
++        // an ngrok tunnel into the Functions emulator (URL changes every time ngrok
++        // restarts — update local.properties, not this file). In production it
++        // should be the real deployed payhereNotify Cloud Function URL.
++        buildConfigField("String", "PAYHERE_NOTIFY_URL",
++                "\"${localProps.getProperty("PAYHERE_NOTIFY_URL") ?: ""}\"")
+     }
+ 
+     buildTypes {
+@@ -42,6 +49,9 @@ android {
+         sourceCompatibility = JavaVersion.VERSION_11
+         targetCompatibility = JavaVersion.VERSION_11
+     }
++    buildFeatures {
++        buildConfig = true
++    }
+ }
+ 
+ dependencies {
+diff --git a/app/src/main/java/com/example/techfix_mobile/BranchListActivity.java b/app/src/main/java/com/example/techfix_mobile/BranchListActivity.java
+index 73f36f9..a1a3f36 100644
+--- a/app/src/main/java/com/example/techfix_mobile/BranchListActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/BranchListActivity.java
+@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
+ 
+ import com.example.techfix_mobile.model.Branch;
+ import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
++import com.example.techfix_mobile.util.BottomNavHelper;
+ 
+ import org.osmdroid.config.Configuration;
+ import org.osmdroid.tileprovider.tilesource.XYTileSource;
+@@ -67,6 +68,8 @@ public class BranchListActivity extends AppCompatActivity {
+         rvBranches.setAdapter(adapter);
+ 
+         loadBranches(adapter);
++
++        BottomNavHelper.setup(this, BottomNavHelper.TAB_BRANCHES);
+     }
+ 
+     @Override
+diff --git a/app/src/main/java/com/example/techfix_mobile/DatabaseHelper.java b/app/src/main/java/com/example/techfix_mobile/DatabaseHelper.java
+index 1665754..65a4902 100644
+--- a/app/src/main/java/com/example/techfix_mobile/DatabaseHelper.java
++++ b/app/src/main/java/com/example/techfix_mobile/DatabaseHelper.java
+@@ -83,7 +83,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
+         return getReadableDatabase().query(TABLE_CURRENT_USER, null, null, null, null, null, null);
+     }
+     public void clearUserData() {
+-        getWritableDatabase().delete(TABLE_CURRENT_USER, null, null);
++        SQLiteDatabase db = getWritableDatabase();
++        db.delete(TABLE_CURRENT_USER, null, null);
++        // Also wipe the previous user's cached requests/payments so a different
++        // account logging in on the same device never sees someone else's data.
++        db.delete(TABLE_MY_REQUESTS, null, null);
++        db.delete(TABLE_PAYMENTS_CACHE, null, null);
+     }
+ 
+     // ---------- my_requests (Person 3's API — RequestSyncManager/PaymentActivity/etc use these) ----------
+diff --git a/app/src/main/java/com/example/techfix_mobile/ProfileActivity.java b/app/src/main/java/com/example/techfix_mobile/ProfileActivity.java
+index 9199144..a919b71 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ProfileActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ProfileActivity.java
+@@ -8,7 +8,9 @@ import android.widget.EditText;
+ import android.widget.TextView;
+ import android.widget.Toast;
+ import androidx.appcompat.app.AppCompatActivity;
++import com.example.techfix_mobile.util.BottomNavHelper;
+ import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
+ import com.google.firebase.firestore.FirebaseFirestore;
+ import java.util.HashMap;
+ import java.util.Map;
+@@ -29,7 +31,14 @@ public class ProfileActivity extends AppCompatActivity {
+ 
+         dbHelper = new DatabaseHelper(this);
+         db = FirebaseFirestore.getInstance();
+-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
++
++        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
++        if (currentUser == null) {
++            Toast.makeText(this, "Session expired, please log in again", Toast.LENGTH_SHORT).show();
++            finish();
++            return;
++        }
++        uid = currentUser.getUid();
+ 
+         profileName = findViewById(R.id.profileName);
+         profilePhone = findViewById(R.id.profilePhone);
+@@ -39,6 +48,8 @@ public class ProfileActivity extends AppCompatActivity {
+         loadProfileData();
+ 
+         updateProfileBtn.setOnClickListener(v -> updateProfile());
++
++        BottomNavHelper.setup(this, BottomNavHelper.TAB_PROFILE);
+     }
+ 
+     private void loadProfileData() {
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestAdapter.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestAdapter.java
+index 15d9867..3ffb299 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestAdapter.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestAdapter.java
+@@ -1,6 +1,5 @@
+ package com.example.techfix_mobile.admin.requests;
+ 
+-import android.graphics.Color;
+ import android.view.LayoutInflater;
+ import android.view.View;
+ import android.view.ViewGroup;
+@@ -9,6 +8,7 @@ import androidx.annotation.NonNull;
+ import androidx.recyclerview.widget.RecyclerView;
+ import com.example.techfix_mobile.R;
+ import com.example.techfix_mobile.model.RepairRequest;
++import com.example.techfix_mobile.util.StatusChipBinder;
+ 
+ import java.util.List;
+ 
+@@ -39,24 +39,11 @@ public class RequestAdapter extends RecyclerView.Adapter<RequestAdapter.ViewHold
+         holder.tvDeviceDetails.setText(r.getDeviceDetails() != null ? r.getDeviceDetails() : "Device details N/A");
+         holder.tvIssueDesc.setText(r.getIssueDesc() != null ? r.getIssueDesc() : "");
+ 
+-        String status = r.getStatus() != null ? r.getStatus() : "pending";
+-        holder.tvStatusChip.setText(status.replace("_", " "));
+-        holder.tvStatusChip.setBackgroundColor(colorForStatus(status));
++        StatusChipBinder.bind(holder.tvStatusChip, r.getStatus());
+ 
+         holder.itemView.setOnClickListener(v -> listener.onClick(r));
+     }
+ 
+-    private int colorForStatus(String status) {
+-        switch (status) {
+-            case "pending": return Color.parseColor("#EEEE30");        // bright yellow
+-            case "assigned": return Color.parseColor("#A0A000");       // mustard
+-            case "in_progress": return Color.parseColor("#D8D800");    // gold-yellow
+-            case "completed": return Color.parseColor("#C8C8B0");      // light khaki
+-            case "ready_for_pickup": return Color.parseColor("#F8FFD0"); // pale yellow
+-            default: return Color.parseColor("#787868");               // muted olive fallback
+-        }
+-    }
+-
+     @Override
+     public int getItemCount() { return items.size(); }
+ 
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+index 7d22239..b013ff2 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+@@ -15,6 +15,7 @@ import android.widget.Toast;
+ 
+ import androidx.activity.result.ActivityResultLauncher;
+ import androidx.activity.result.contract.ActivityResultContracts;
++import androidx.annotation.NonNull;
+ import androidx.appcompat.app.AppCompatActivity;
+ import androidx.core.app.ActivityCompat;
+ import androidx.core.content.ContextCompat;
+@@ -125,13 +126,13 @@ public class RequestDetailActivity extends AppCompatActivity {
+     // ================= PHOTO CAPTURE =================
+ 
+     private void startCapture(String type) {
++        capturingType = type;
+         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                 != PackageManager.PERMISSION_GRANTED) {
+             ActivityCompat.requestPermissions(this,
+                     new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+             return;
+         }
+-        capturingType = type;
+         try {
+             File photoFile = createTempImageFile();
+             pendingPhotoPath = photoFile.getAbsolutePath();
+@@ -143,6 +144,19 @@ public class RequestDetailActivity extends AppCompatActivity {
+         }
+     }
+ 
++    @Override
++    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
++                                            @NonNull int[] grantResults) {
++        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
++        if (requestCode == CAMERA_PERMISSION_CODE) {
++            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++                startCapture(capturingType);
++            } else {
++                Toast.makeText(this, "Camera permission is required to capture photos", Toast.LENGTH_SHORT).show();
++            }
++        }
++    }
++
+     private File createTempImageFile() throws IOException {
+         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+         File cacheDir = getCacheDir();
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/resources/AddEditResourceActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/resources/AddEditResourceActivity.java
+index 1a4d45d..efe4694 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/resources/AddEditResourceActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/resources/AddEditResourceActivity.java
+@@ -8,25 +8,22 @@ import android.widget.EditText;
+ import android.widget.LinearLayout;
+ import android.widget.TextView;
+ import android.widget.Toast;
+-import androidx.annotation.NonNull;
+ import androidx.appcompat.app.AppCompatActivity;
+-import com.google.android.gms.maps.CameraUpdateFactory;
+-import com.google.android.gms.maps.GoogleMap;
+-import com.google.android.gms.maps.OnMapReadyCallback;
+-import com.google.android.gms.maps.SupportMapFragment;
+-import com.google.android.gms.maps.model.LatLng;
+-import com.google.android.gms.maps.model.MarkerOptions;
+ import com.google.firebase.firestore.FirebaseFirestore;
+ import com.example.techfix_mobile.R;
+-import com.example.techfix_mobile.models.Branch;
++import com.example.techfix_mobile.model.Branch;
+ import com.example.techfix_mobile.repository.FirestoreRepository;
++import org.osmdroid.tileprovider.tilesource.XYTileSource;
++import org.osmdroid.util.GeoPoint;
++import org.osmdroid.views.MapView;
++import org.osmdroid.views.overlay.Marker;
+ 
+ import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ 
+-public class AddEditResourceActivity extends AppCompatActivity implements OnMapReadyCallback {
++public class AddEditResourceActivity extends AppCompatActivity {
+ 
+     public static final String EXTRA_TYPE = "resource_type";
+     public static final String EXTRA_ID = "resource_id";
+@@ -38,7 +35,8 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
+     // ---- Branch-specific (map) path ----
+     private EditText etName, etAddress, etContact;
+     private TextView tvLatLng;
+-    private GoogleMap map;
++    private MapView map;
++    private Marker branchMarker;
+     private Double selectedLat, selectedLng;
+ 
+     // ---- Generic dynamic-field path ----
+@@ -73,29 +71,46 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
+         tvLatLng = findViewById(R.id.tvLatLng);
+         Button btnSave = findViewById(R.id.btnSave);
+ 
+-        SupportMapFragment mapFragment = (SupportMapFragment)
+-                getSupportFragmentManager().findFragmentById(R.id.mapFragment);
+-        if (mapFragment != null) mapFragment.getMapAsync(this);
++        map = findViewById(R.id.map);
++        map.setTileSource(new XYTileSource(
++                "CartoLight", 0, 19, 256, ".png",
++                new String[]{
++                        "https://a.basemaps.cartocdn.com/light_all/",
++                        "https://b.basemaps.cartocdn.com/light_all/",
++                        "https://c.basemaps.cartocdn.com/light_all/"
++                }));
++        map.setMultiTouchControls(true);
++        GeoPoint defaultPoint = new GeoPoint(6.9271, 79.8612);
++        map.getController().setZoom(10.0);
++        map.getController().setCenter(defaultPoint);
++
++        org.osmdroid.events.MapEventsReceiver receiver = new org.osmdroid.events.MapEventsReceiver() {
++            @Override
++            public boolean singleTapConfirmedHelper(GeoPoint p) {
++                selectedLat = p.getLatitude();
++                selectedLng = p.getLongitude();
++                if (branchMarker != null) map.getOverlays().remove(branchMarker);
++                branchMarker = new Marker(map);
++                branchMarker.setPosition(p);
++                branchMarker.setTitle("Branch Location");
++                map.getOverlays().add(branchMarker);
++                tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", p.getLatitude(), p.getLongitude()));
++                map.invalidate();
++                return true;
++            }
++
++            @Override
++            public boolean longPressHelper(GeoPoint p) {
++                return false;
++            }
++        };
++        map.getOverlays().add(new org.osmdroid.views.overlay.MapEventsOverlay(receiver));
+ 
+         if (editingId != null) loadExistingBranch();
+ 
+         btnSave.setOnClickListener(v -> saveBranch());
+     }
+ 
+-    @Override
+-    public void onMapReady(@NonNull GoogleMap googleMap) {
+-        map = googleMap;
+-        LatLng defaultPoint = new LatLng(6.9271, 79.8612);
+-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPoint, 10));
+-        map.setOnMapClickListener(latLng -> {
+-            selectedLat = latLng.latitude;
+-            selectedLng = latLng.longitude;
+-            map.clear();
+-            map.addMarker(new MarkerOptions().position(latLng).title("Branch Location"));
+-            tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", latLng.latitude, latLng.longitude));
+-        });
+-    }
+-
+     private void loadExistingBranch() {
+         FirebaseFirestore.getInstance().collection("branches").document(editingId)
+                 .get()
+@@ -108,12 +123,15 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
+                     selectedLat = b.getLat();
+                     selectedLng = b.getLng();
+                     tvLatLng.setText(String.format("Lat: %.6f, Lng: %.6f", b.getLat(), b.getLng()));
+-                    if (map != null) {
+-                        LatLng point = new LatLng(b.getLat(), b.getLng());
+-                        map.clear();
+-                        map.addMarker(new MarkerOptions().position(point));
+-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 13));
+-                    }
++                    GeoPoint point = new GeoPoint(b.getLat(), b.getLng());
++                    if (branchMarker != null) map.getOverlays().remove(branchMarker);
++                    branchMarker = new Marker(map);
++                    branchMarker.setPosition(point);
++                    branchMarker.setTitle(b.getName());
++                    map.getOverlays().add(branchMarker);
++                    map.getController().setCenter(point);
++                    map.getController().setZoom(14.0);
++                    map.invalidate();
+                 });
+     }
+ 
+@@ -149,6 +167,18 @@ public class AddEditResourceActivity extends AppCompatActivity implements OnMapR
+         });
+     }
+ 
++    @Override
++    protected void onResume() {
++        super.onResume();
++        if (map != null) map.onResume();
++    }
++
++    @Override
++    protected void onPause() {
++        super.onPause();
++        if (map != null) map.onPause();
++    }
++
+     // ================= GENERIC (Technician, and future types) FORM =================
+ 
+     private void setupGenericForm() {
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/resources/GenericFieldViews.java b/app/src/main/java/com/example/techfix_mobile/admin/resources/GenericFieldViews.java
+index 3c1c89f..b712d46 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/resources/GenericFieldViews.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/resources/GenericFieldViews.java
+@@ -32,11 +32,21 @@ public class GenericFieldViews {
+                     return ((EditText) inputView).getText().toString().trim();
+                 case NUMBER_INT: {
+                     String s = ((EditText) inputView).getText().toString().trim();
+-                    return s.isEmpty() ? 0 : Integer.parseInt(s);
++                    if (s.isEmpty()) return 0;
++                    try {
++                        return Integer.parseInt(s);
++                    } catch (NumberFormatException e) {
++                        return 0;
++                    }
+                 }
+                 case NUMBER_DECIMAL: {
+                     String s = ((EditText) inputView).getText().toString().trim();
+-                    return s.isEmpty() ? 0.0 : Double.parseDouble(s);
++                    if (s.isEmpty()) return 0.0;
++                    try {
++                        return Double.parseDouble(s);
++                    } catch (NumberFormatException e) {
++                        return 0.0;
++                    }
+                 }
+                 case BOOLEAN:
+                     return ((Switch) inputView).isChecked();
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/confirmation/ConfirmationActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/confirmation/ConfirmationActivity.java
+index 63c52e9..b8c7645 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/confirmation/ConfirmationActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/confirmation/ConfirmationActivity.java
+@@ -6,6 +6,7 @@ import android.widget.TextView;
+ import androidx.appcompat.app.AppCompatActivity;
+ import com.example.techfix_mobile.R;
+ import com.example.techfix_mobile.ui.home.HomeActivity;
++import com.example.techfix_mobile.ui.myrequests.MyRequestsActivity;
+ 
+ public class ConfirmationActivity extends AppCompatActivity {
+ 
+@@ -26,6 +27,12 @@ public class ConfirmationActivity extends AppCompatActivity {
+         tvBranch.setText("Assigned to: " + branchName);
+         tvRequestId.setText("Request ID: " + requestId);
+ 
++        findViewById(R.id.btnViewMyRequests).setOnClickListener(v -> {
++            Intent intent = new Intent(this, MyRequestsActivity.class);
++            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
++            startActivity(intent);
++        });
++
+         findViewById(R.id.btnBackToHome).setOnClickListener(v -> {
+             Intent intent = new Intent(this, HomeActivity.class);
+             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/history/RepairHistoryActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/history/RepairHistoryActivity.java
+index 36107a5..081fe5b 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/history/RepairHistoryActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/history/RepairHistoryActivity.java
+@@ -11,6 +11,7 @@ import com.example.techfix_mobile.DatabaseHelper;
+ import com.example.techfix_mobile.model.RepairRequest;
+ import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
+ import com.example.techfix_mobile.ui.myrequests.MyRequestsAdapter;
++import com.example.techfix_mobile.util.BottomNavHelper;
+ 
+ public class RepairHistoryActivity extends AppCompatActivity {
+ 
+@@ -34,5 +35,7 @@ public class RepairHistoryActivity extends AppCompatActivity {
+         // History = SQLite already synced by MyRequestsActivity; this screen just filters
+         // for completed/ready_for_pickup, it does not trigger its own Firestore sync.
+         adapter.submitList(dbHelper.getHistoryRequests());
++
++        BottomNavHelper.setup(this, BottomNavHelper.TAB_HISTORY);
+     }
+ }
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/home/HomeActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/home/HomeActivity.java
+index 9e2ff61..6f88364 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/home/HomeActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/home/HomeActivity.java
+@@ -21,6 +21,7 @@ import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
+ import com.example.techfix_mobile.model.DeviceCategory;
+ import com.example.techfix_mobile.model.RepairService;
+ import com.example.techfix_mobile.ui.servicedetail.ServiceDetailActivity;
++import com.example.techfix_mobile.util.BottomNavHelper;
+ import com.google.android.material.appbar.MaterialToolbar;
+ import com.google.firebase.auth.FirebaseAuth;
+ 
+@@ -104,6 +105,8 @@ public class HomeActivity extends AppCompatActivity {
+ 
+         loadServices();
+         loadCategories();
++
++        BottomNavHelper.setup(this, BottomNavHelper.TAB_HOME);
+     }
+ 
+     private void loadServices() {
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/myrequests/MyRequestsActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/myrequests/MyRequestsActivity.java
+index b0f7418..7f3349f 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/myrequests/MyRequestsActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/myrequests/MyRequestsActivity.java
+@@ -12,6 +12,7 @@ import com.example.techfix_mobile.data.RequestSyncManager;
+ import com.example.techfix_mobile.DatabaseHelper;
+ import com.example.techfix_mobile.model.RepairRequest;
+ import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
++import com.example.techfix_mobile.util.BottomNavHelper;
+ import com.google.firebase.auth.FirebaseAuth;
+ 
+ import java.util.List;
+@@ -48,6 +49,8 @@ public class MyRequestsActivity extends AppCompatActivity {
+ 
+         loadFromLocal(); // show cached data immediately
+         syncThenLoad();  // then refresh from Firestore
++
++        BottomNavHelper.setup(this, BottomNavHelper.TAB_REQUESTS);
+     }
+ 
+     private void syncThenLoad() {
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/payment/PaymentActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/payment/PaymentActivity.java
+index cb7d5a9..8cb6435 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/payment/PaymentActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/payment/PaymentActivity.java
+@@ -9,6 +9,7 @@ import android.util.Log;
+ import android.widget.Toast;
+ import androidx.appcompat.app.AppCompatActivity;
+ 
++import com.example.techfix_mobile.BuildConfig;
+ import com.example.techfix_mobile.R;
+ import com.example.techfix_mobile.data.PaymentRepository;
+ import com.example.techfix_mobile.DatabaseHelper;
+@@ -28,7 +29,7 @@ public class PaymentActivity extends AppCompatActivity {
+     private static final int PAYHERE_REQUEST = 11001;
+ 
+     private static final String PAYHERE_MERCHANT_ID = "1237421";
+-    private static final String NOTIFY_URL = "https://untamed-promoter-blabber.ngrok-free.dev/techfix-mobile/us-central1/payhereNotify";
++    private static final String NOTIFY_URL = BuildConfig.PAYHERE_NOTIFY_URL;
+ 
+     private DatabaseHelper dbHelper;
+     private PaymentRepository paymentRepository;
+@@ -51,6 +52,13 @@ public class PaymentActivity extends AppCompatActivity {
+     }
+ 
+     private void startPaymentFlow() {
++        if (NOTIFY_URL == null || NOTIFY_URL.isEmpty()) {
++            Toast.makeText(this, "PAYHERE_NOTIFY_URL is not set in local.properties — " +
++                    "payment can't confirm without it", Toast.LENGTH_LONG).show();
++            finish();
++            return;
++        }
++
+         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+         if (user == null) {
+             Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();
+diff --git a/app/src/main/java/com/example/techfix_mobile/util/BottomNavHelper.java b/app/src/main/java/com/example/techfix_mobile/util/BottomNavHelper.java
+new file mode 100644
+index 0000000..48ba923
+--- /dev/null
++++ b/app/src/main/java/com/example/techfix_mobile/util/BottomNavHelper.java
+@@ -0,0 +1,73 @@
++package com.example.techfix_mobile.util;
++
++import android.app.Activity;
++import android.content.Intent;
++import android.view.View;
++import android.widget.ImageView;
++import android.widget.TextView;
++import androidx.core.content.ContextCompat;
++
++import com.example.techfix_mobile.BranchListActivity;
++import com.example.techfix_mobile.ProfileActivity;
++import com.example.techfix_mobile.R;
++import com.example.techfix_mobile.ui.history.RepairHistoryActivity;
++import com.example.techfix_mobile.ui.home.HomeActivity;
++import com.example.techfix_mobile.ui.myrequests.MyRequestsActivity;
++
++/**
++ * Wires up the shared {@code bottom_nav.xml} include on the 5 top-level
++ * customer screens (Home, My Requests, Repair History, Branches, Profile).
++ * Call {@link #setup(Activity, int)} once at the end of onCreate, after
++ * setContentView, on any activity whose layout includes bottom_nav.xml.
++ */
++public class BottomNavHelper {
++
++    public static final int TAB_HOME = 0;
++    public static final int TAB_REQUESTS = 1;
++    public static final int TAB_HISTORY = 2;
++    public static final int TAB_BRANCHES = 3;
++    public static final int TAB_PROFILE = 4;
++
++    private interface Destination {
++        void go(Activity activity);
++    }
++
++    public static void setup(Activity activity, int activeTab) {
++        bindTab(activity, activeTab, TAB_HOME,
++                R.id.navHome, R.id.navHomeIcon, R.id.navHomeLabel,
++                a -> a.startActivity(new Intent(a, HomeActivity.class)));
++
++        bindTab(activity, activeTab, TAB_REQUESTS,
++                R.id.navRequests, R.id.navRequestsIcon, R.id.navRequestsLabel,
++                a -> a.startActivity(new Intent(a, MyRequestsActivity.class)));
++
++        bindTab(activity, activeTab, TAB_HISTORY,
++                R.id.navHistory, R.id.navHistoryIcon, R.id.navHistoryLabel,
++                a -> a.startActivity(new Intent(a, RepairHistoryActivity.class)));
++
++        bindTab(activity, activeTab, TAB_BRANCHES,
++                R.id.navBranches, R.id.navBranchesIcon, R.id.navBranchesLabel,
++                a -> a.startActivity(new Intent(a, BranchListActivity.class)));
++
++        bindTab(activity, activeTab, TAB_PROFILE,
++                R.id.navProfile, R.id.navProfileIcon, R.id.navProfileLabel,
++                a -> a.startActivity(new Intent(a, ProfileActivity.class)));
++    }
++
++    private static void bindTab(Activity activity, int activeTab, int tab,
++                                 int rowId, int iconId, int labelId, Destination destination) {
++        View row = activity.findViewById(rowId);
++        if (row == null) return;
++
++        ImageView icon = row.findViewById(iconId);
++        TextView label = row.findViewById(labelId);
++
++        int color = ContextCompat.getColor(activity, tab == activeTab ? R.color.cyan : R.color.text_faint);
++        icon.setColorFilter(color);
++        label.setTextColor(color);
++
++        row.setOnClickListener(v -> {
++            if (tab != activeTab) destination.go(activity);
++        });
++    }
++}
+diff --git a/app/src/main/res/drawable/ic_nav_branches.xml b/app/src/main/res/drawable/ic_nav_branches.xml
+new file mode 100644
+index 0000000..6ab9402
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_nav_branches.xml
+@@ -0,0 +1,17 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24">
++    <path
++        android:pathData="M12,21 C12,21 5,14 5,9 A7,7 0 0,1 19,9 C19,14 12,21 12,21 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:strokeLineJoin="round"
++        android:fillColor="#00000000" />
++    <path
++        android:pathData="M12,7 A2,2 0 1,0 12.01,7 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:fillColor="#00000000" />
++</vector>
+diff --git a/app/src/main/res/drawable/ic_nav_history.xml b/app/src/main/res/drawable/ic_nav_history.xml
+new file mode 100644
+index 0000000..cfd45d4
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_nav_history.xml
+@@ -0,0 +1,17 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24">
++    <path
++        android:pathData="M12,4 A8,8 0 1,0 12.01,4 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:fillColor="#00000000" />
++    <path
++        android:pathData="M12,8 V13 L15,15"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:strokeLineCap="round"
++        android:fillColor="#00000000" />
++</vector>
+diff --git a/app/src/main/res/drawable/ic_nav_home.xml b/app/src/main/res/drawable/ic_nav_home.xml
+new file mode 100644
+index 0000000..9dd6ea0
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_nav_home.xml
+@@ -0,0 +1,13 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24">
++    <path
++        android:pathData="M4,11 L12,4 L20,11 V19 A1,1 0 0,1 19,20 H15 V14 H9 V20 H5 A1,1 0 0,1 4,19 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:strokeLineJoin="round"
++        android:strokeLineCap="round"
++        android:fillColor="#00000000" />
++</vector>
+diff --git a/app/src/main/res/drawable/ic_nav_profile.xml b/app/src/main/res/drawable/ic_nav_profile.xml
+new file mode 100644
+index 0000000..1205a3f
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_nav_profile.xml
+@@ -0,0 +1,17 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24">
++    <path
++        android:pathData="M12,4.6 A3.4,3.4 0 1,0 12.01,4.6 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:fillColor="#00000000" />
++    <path
++        android:pathData="M5,20 C6.2,16.4 9,14.6 12,14.6 C15,14.6 17.8,16.4 19,20"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:strokeLineCap="round"
++        android:fillColor="#00000000" />
++</vector>
+diff --git a/app/src/main/res/drawable/ic_nav_requests.xml b/app/src/main/res/drawable/ic_nav_requests.xml
+new file mode 100644
+index 0000000..519e5d4
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_nav_requests.xml
+@@ -0,0 +1,17 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24">
++    <path
++        android:pathData="M6,4 H18 A2,2 0 0,1 20,6 V18 A2,2 0 0,1 18,20 H6 A2,2 0 0,1 4,18 V6 A2,2 0 0,1 6,4 Z"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:fillColor="#00000000" />
++    <path
++        android:pathData="M8,9 H16 M8,13 H13"
++        android:strokeColor="#FFFFFF"
++        android:strokeWidth="1.8"
++        android:strokeLineCap="round"
++        android:fillColor="#00000000" />
++</vector>
+diff --git a/app/src/main/res/layout/activity_add_edit_branch.xml b/app/src/main/res/layout/activity_add_edit_branch.xml
+index 22e8394..57ec36b 100644
+--- a/app/src/main/res/layout/activity_add_edit_branch.xml
++++ b/app/src/main/res/layout/activity_add_edit_branch.xml
+@@ -1,7 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     android:background="@color/ink">
+@@ -61,13 +60,11 @@
+             android:textAppearance="@style/TextAppearance.TechFix.Mono"
+             android:text="No location selected" />
+ 
+-        <fragment
+-            android:id="@+id/mapFragment"
+-            android:name="com.google.android.gms.maps.SupportMapFragment"
++        <org.osmdroid.views.MapView
++            android:id="@+id/map"
+             android:layout_width="match_parent"
+             android:layout_height="300dp"
+-            android:layout_marginTop="10dp"
+-            tools:layout="@layout/activity_add_edit_branch" />
++            android:layout_marginTop="10dp" />
+ 
+         <Button
+             android:id="@+id/btnSave"
+diff --git a/app/src/main/res/layout/activity_branch_list.xml b/app/src/main/res/layout/activity_branch_list.xml
+index 3d42fd6..b739dae 100644
+--- a/app/src/main/res/layout/activity_branch_list.xml
++++ b/app/src/main/res/layout/activity_branch_list.xml
+@@ -29,4 +29,6 @@
+         android:layout_marginTop="14dp"
+         android:paddingHorizontal="20dp" />
+ 
++    <include layout="@layout/bottom_nav" />
++
+ </LinearLayout>
+diff --git a/app/src/main/res/layout/activity_branch_map.xml b/app/src/main/res/layout/activity_branch_map.xml
+deleted file mode 100644
+index ed88cfe..0000000
+--- a/app/src/main/res/layout/activity_branch_map.xml
++++ /dev/null
+@@ -1,8 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:id="@+id/map"
+-    android:name="com.google.android.gms.maps.SupportMapFragment"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    tools:context=".BranchMapActivity" />
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/activity_confirmation.xml b/app/src/main/res/layout/activity_confirmation.xml
+index cc6ef54..d1f42ae 100644
+--- a/app/src/main/res/layout/activity_confirmation.xml
++++ b/app/src/main/res/layout/activity_confirmation.xml
+@@ -46,11 +46,19 @@
+     </LinearLayout>
+ 
+     <Button
+-        android:id="@+id/btnBackToHome"
++        android:id="@+id/btnViewMyRequests"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_marginTop="30dp"
+-        android:text="Back to Home"
++        android:text="View My Requests"
+         style="@style/Widget.TechFix.Button.Primary" />
+ 
++    <Button
++        android:id="@+id/btnBackToHome"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginTop="10dp"
++        android:text="Back to Home"
++        style="@style/Widget.TechFix.Button.Ghost" />
++
+ </LinearLayout>
+diff --git a/app/src/main/res/layout/activity_home.xml b/app/src/main/res/layout/activity_home.xml
+index 9490a08..2fbabcf 100644
+--- a/app/src/main/res/layout/activity_home.xml
++++ b/app/src/main/res/layout/activity_home.xml
+@@ -83,4 +83,6 @@
+         android:layout_weight="1"
+         android:layout_marginHorizontal="20dp" />
+ 
++    <include layout="@layout/bottom_nav" />
++
+ </LinearLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/activity_my_requests.xml b/app/src/main/res/layout/activity_my_requests.xml
+index a19a6b4..a2dec47 100644
+--- a/app/src/main/res/layout/activity_my_requests.xml
++++ b/app/src/main/res/layout/activity_my_requests.xml
+@@ -46,4 +46,6 @@
+ 
+     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+ 
++    <include layout="@layout/bottom_nav" />
++
+ </LinearLayout>
+diff --git a/app/src/main/res/layout/activity_profile.xml b/app/src/main/res/layout/activity_profile.xml
+index 54f6ed3..100a2a2 100644
+--- a/app/src/main/res/layout/activity_profile.xml
++++ b/app/src/main/res/layout/activity_profile.xml
+@@ -3,59 +3,74 @@
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     android:orientation="vertical"
+-    android:background="@color/ink"
+-    android:padding="22dp">
+-
+-    <TextView
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="My Profile"
+-        android:textSize="18sp"
+-        android:textStyle="bold"
+-        android:textColor="@color/text_primary"
+-        android:textAppearance="@style/TextAppearance.TechFix.Display"
+-        android:layout_marginBottom="24dp" />
+-
+-    <EditText
+-        android:id="@+id/profileName"
+-        android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:hint="Name"
+-        android:textColor="@color/text_primary"
+-        android:textColorHint="@color/text_faint"
+-        android:background="@drawable/bg_input_field"
+-        android:padding="13dp" />
+-
+-    <EditText
+-        android:id="@+id/profilePhone"
+-        android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginTop="14dp"
+-        android:hint="Phone"
+-        android:inputType="phone"
+-        android:textColor="@color/text_primary"
+-        android:textColorHint="@color/text_faint"
+-        android:background="@drawable/bg_input_field"
+-        android:padding="13dp" />
+-
+-    <EditText
+-        android:id="@+id/profileEmail"
+-        android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginTop="14dp"
+-        android:hint="Email"
+-        android:inputType="textEmailAddress"
+-        android:textColor="@color/text_primary"
+-        android:textColorHint="@color/text_faint"
+-        android:background="@drawable/bg_input_field"
+-        android:padding="13dp" />
+-
+-    <Button
+-        android:id="@+id/updateProfileBtn"
++    android:background="@color/ink">
++
++    <ScrollView
+         android:layout_width="match_parent"
+-        android:layout_height="wrap_content"
+-        android:layout_marginTop="22dp"
+-        android:text="Update Profile"
+-        style="@style/Widget.TechFix.Button.Primary" />
++        android:layout_height="0dp"
++        android:layout_weight="1">
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="vertical"
++            android:padding="22dp">
++
++            <TextView
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:text="My Profile"
++                android:textSize="18sp"
++                android:textStyle="bold"
++                android:textColor="@color/text_primary"
++                android:textAppearance="@style/TextAppearance.TechFix.Display"
++                android:layout_marginBottom="24dp" />
++
++            <EditText
++                android:id="@+id/profileName"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="Name"
++                android:textColor="@color/text_primary"
++                android:textColorHint="@color/text_faint"
++                android:background="@drawable/bg_input_field"
++                android:padding="13dp" />
++
++            <EditText
++                android:id="@+id/profilePhone"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="14dp"
++                android:hint="Phone"
++                android:inputType="phone"
++                android:textColor="@color/text_primary"
++                android:textColorHint="@color/text_faint"
++                android:background="@drawable/bg_input_field"
++                android:padding="13dp" />
++
++            <EditText
++                android:id="@+id/profileEmail"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="14dp"
++                android:hint="Email"
++                android:inputType="textEmailAddress"
++                android:textColor="@color/text_primary"
++                android:textColorHint="@color/text_faint"
++                android:background="@drawable/bg_input_field"
++                android:padding="13dp" />
++
++            <Button
++                android:id="@+id/updateProfileBtn"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="22dp"
++                android:text="Update Profile"
++                style="@style/Widget.TechFix.Button.Primary" />
++
++        </LinearLayout>
++    </ScrollView>
++
++    <include layout="@layout/bottom_nav" />
+ 
+ </LinearLayout>
+diff --git a/app/src/main/res/layout/activity_repair_history.xml b/app/src/main/res/layout/activity_repair_history.xml
+index a658f1d..40d9197 100644
+--- a/app/src/main/res/layout/activity_repair_history.xml
++++ b/app/src/main/res/layout/activity_repair_history.xml
+@@ -22,4 +22,6 @@
+         android:layout_weight="1"
+         android:paddingHorizontal="20dp" />
+ 
++    <include layout="@layout/bottom_nav" />
++
+ </LinearLayout>
+diff --git a/app/src/main/res/layout/bottom_nav.xml b/app/src/main/res/layout/bottom_nav.xml
+new file mode 100644
+index 0000000..79d1a60
+--- /dev/null
++++ b/app/src/main/res/layout/bottom_nav.xml
+@@ -0,0 +1,156 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="wrap_content"
++    android:orientation="vertical"
++    android:background="@color/ink_2">
++
++    <View
++        android:layout_width="match_parent"
++        android:layout_height="1dp"
++        android:background="@color/panel_line" />
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal"
++        android:paddingTop="10dp"
++        android:paddingBottom="10dp">
++
++        <LinearLayout
++            android:id="@+id/navHome"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:orientation="vertical"
++            android:gravity="center"
++            android:clickable="true"
++            android:focusable="true"
++            android:background="?attr/selectableItemBackgroundBorderless">
++
++            <ImageView
++                android:id="@+id/navHomeIcon"
++                android:layout_width="20dp"
++                android:layout_height="20dp"
++                android:src="@drawable/ic_nav_home" />
++
++            <TextView
++                android:id="@+id/navHomeLabel"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="4dp"
++                android:text="Home"
++                android:textSize="9sp"
++                android:textStyle="bold" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:id="@+id/navRequests"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:orientation="vertical"
++            android:gravity="center"
++            android:clickable="true"
++            android:focusable="true"
++            android:background="?attr/selectableItemBackgroundBorderless">
++
++            <ImageView
++                android:id="@+id/navRequestsIcon"
++                android:layout_width="20dp"
++                android:layout_height="20dp"
++                android:src="@drawable/ic_nav_requests" />
++
++            <TextView
++                android:id="@+id/navRequestsLabel"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="4dp"
++                android:text="Requests"
++                android:textSize="9sp"
++                android:textStyle="bold" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:id="@+id/navHistory"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:orientation="vertical"
++            android:gravity="center"
++            android:clickable="true"
++            android:focusable="true"
++            android:background="?attr/selectableItemBackgroundBorderless">
++
++            <ImageView
++                android:id="@+id/navHistoryIcon"
++                android:layout_width="20dp"
++                android:layout_height="20dp"
++                android:src="@drawable/ic_nav_history" />
++
++            <TextView
++                android:id="@+id/navHistoryLabel"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="4dp"
++                android:text="History"
++                android:textSize="9sp"
++                android:textStyle="bold" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:id="@+id/navBranches"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:orientation="vertical"
++            android:gravity="center"
++            android:clickable="true"
++            android:focusable="true"
++            android:background="?attr/selectableItemBackgroundBorderless">
++
++            <ImageView
++                android:id="@+id/navBranchesIcon"
++                android:layout_width="20dp"
++                android:layout_height="20dp"
++                android:src="@drawable/ic_nav_branches" />
++
++            <TextView
++                android:id="@+id/navBranchesLabel"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="4dp"
++                android:text="Branches"
++                android:textSize="9sp"
++                android:textStyle="bold" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:id="@+id/navProfile"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:orientation="vertical"
++            android:gravity="center"
++            android:clickable="true"
++            android:focusable="true"
++            android:background="?attr/selectableItemBackgroundBorderless">
++
++            <ImageView
++                android:id="@+id/navProfileIcon"
++                android:layout_width="20dp"
++                android:layout_height="20dp"
++                android:src="@drawable/ic_nav_profile" />
++
++            <TextView
++                android:id="@+id/navProfileLabel"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginTop="4dp"
++                android:text="Profile"
++                android:textSize="9sp"
++                android:textStyle="bold" />
++        </LinearLayout>
++
++    </LinearLayout>
++</LinearLayout>
+diff --git a/firebase.json b/firebase.json
+index 330af33..2f1d003 100644
+--- a/firebase.json
++++ b/firebase.json
+@@ -1,4 +1,7 @@
+ {
++  "firestore": {
++    "rules": "firestore.rules"
++  },
+   "functions": [
+     {
+       "source": "functions",
+diff --git a/firestore.rules b/firestore.rules
+new file mode 100644
+index 0000000..fc5f481
+--- /dev/null
++++ b/firestore.rules
+@@ -0,0 +1,110 @@
++rules_version = '2';
++
++// SECURITY NOTE (read before deploying):
++// This repo had NO firestore.rules file and firebase.json had no "firestore"
++// section, which usually means the project is still on Firestore's default
++// test-mode rules (wide open reads/writes to anyone with the client config,
++// which is not secret) or whatever was hand-edited in the console and never
++// exported. Either way, nothing server-side was enforcing the access model
++// the app's UI assumes. Concretely, without rules like these:
++//   - Any client can PATCH their own users/{uid} doc to set role:"admin"
++//     and instantly get routed into the admin dashboard (Login/Splash pick
++//     the destination Activity purely off this field).
++//   - Any client can read every other customer's repairRequests/payments
++//     (device details, issue text, phone/location, payment amounts).
++//   - Any client can set a payments/{id}.status to "completed" directly,
++//     bypassing the signed PayHere webhook in functions/index.js entirely.
++//
++// Deploy with: firebase deploy --only firestore:rules
++// (after wiring "firestore": { "rules": "firestore.rules" } into firebase.json)
++// Review against your actual data model before deploying — this mirrors the
++// collections/fields the client code in this repo actually reads and writes.
++
++function isSignedIn() {
++  return request.auth != null;
++}
++
++function isAdmin() {
++  return isSignedIn() &&
++    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
++}
++
++function isOwner(uidField) {
++  return isSignedIn() && request.auth.uid == uidField;
++}
++
++service cloud.firestore {
++  match /databases/{database}/documents {
++
++    // ---- users ----
++    // Everyone can read/write only their own profile. "role" can never be
++    // set or changed by the client — it's fixed to "customer" on create,
++    // and only ever flipped to "admin" by hand in the console / an admin
++    // tool that uses the Admin SDK (which bypasses these rules).
++    match /users/{uid} {
++      allow read: if isOwner(uid) || isAdmin();
++      allow create: if isOwner(uid) && request.resource.data.role == 'customer';
++      allow update: if isOwner(uid) &&
++        request.resource.data.role == resource.data.role;
++      allow delete: if false;
++    }
++
++    // ---- repairRequests ----
++    // A customer can create their own request and read it back. Only an
++    // admin can change status/assignedTechnicianId/etc (RequestDetailActivity
++    // under admin/). Customers never edit a request after submitting it.
++    match /repairRequests/{requestId} {
++      allow read: if isAdmin() || isOwner(resource.data.customerId);
++      allow create: if isOwner(request.resource.data.customerId);
++      allow update: if isAdmin();
++      allow delete: if isAdmin();
++    }
++
++    // ---- payments ----
++    // Status must never be settable by a client — only the payhereNotify
++    // Cloud Function (Admin SDK, bypasses rules) flips it to
++    // completed/failed after verifying PayHere's MD5 signature. A customer
++    // can create the initial "pending" record and read their own payments.
++    match /payments/{paymentId} {
++      allow read: if isAdmin() || isOwner(resource.data.customerId);
++      allow create: if isOwner(request.resource.data.customerId) &&
++        request.resource.data.status == 'pending';
++      allow update: if false;
++      allow delete: if false;
++    }
++
++    // ---- repairPhotos (admin before/after capture) ----
++    match /repairPhotos/{photoId} {
++      allow read: if isAdmin();
++      allow write: if isAdmin();
++    }
++
++    // ---- reference data browsed by any signed-in customer, ----
++    // ---- managed only through the admin "Manage Resources" screens ----
++    match /branches/{branchId} {
++      allow read: if isSignedIn();
++      allow write: if isAdmin();
++    }
++    match /technicians/{technicianId} {
++      allow read: if isSignedIn();
++      allow write: if isAdmin();
++    }
++    match /deviceCategories/{categoryId} {
++      allow read: if isSignedIn();
++      allow write: if isAdmin();
++    }
++    match /repairServices/{serviceId} {
++      allow read: if isSignedIn();
++      allow write: if isAdmin();
++    }
++    match /spareParts/{partId} {
++      allow read: if isSignedIn();
++      allow write: if isAdmin();
++    }
++
++    // Deny anything not explicitly listed above.
++    match /{document=**} {
++      allow read, write: if false;
++    }
++  }
++}

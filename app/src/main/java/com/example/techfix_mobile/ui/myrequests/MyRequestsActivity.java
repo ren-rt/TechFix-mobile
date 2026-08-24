@@ -12,6 +12,7 @@ import com.example.techfix_mobile.data.RequestSyncManager;
 import com.example.techfix_mobile.DatabaseHelper;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
+import com.example.techfix_mobile.util.BottomNavHelper;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
@@ -48,6 +49,8 @@ public class MyRequestsActivity extends AppCompatActivity {
 
         loadFromLocal(); // show cached data immediately
         syncThenLoad();  // then refresh from Firestore
+
+        BottomNavHelper.setup(this, BottomNavHelper.TAB_REQUESTS);
     }
 
     private void syncThenLoad() {

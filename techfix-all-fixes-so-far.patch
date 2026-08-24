@@ -1,0 +1,245 @@
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
+index 3d46971..16f70be 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
+@@ -58,6 +58,11 @@ public class IncomingRequestsActivity extends AppCompatActivity {
+                     });
+                     adapter.notifyDataSetChanged();
+                     tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
++                })
++                .addOnFailureListener(e -> {
++                    android.util.Log.e("IncomingRequests", "Failed to load repairRequests", e);
++                    tvEmpty.setText("Couldn't load requests: " + e.getMessage());
++                    tvEmpty.setVisibility(View.VISIBLE);
+                 });
+     }
+ }
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+index 7d22239..85739a4 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+@@ -51,7 +51,7 @@ public class RequestDetailActivity extends AppCompatActivity {
+ 
+     private TextView tvDeviceDetails, tvIssueDesc, tvCurrentStatus;
+     private Spinner spinnerTechnician, spinnerStatus;
+-    private ImageView imgBefore, imgAfter;
++    private ImageView imgBefore, imgAfter, imgCustomerPhoto;
+     private TextView tvPaymentStatus;
+ 
+     private final List<String> technicianIds = new ArrayList<>();
+@@ -79,6 +79,7 @@ public class RequestDetailActivity extends AppCompatActivity {
+         spinnerStatus = findViewById(R.id.spinnerStatus);
+         imgBefore = findViewById(R.id.imgBefore);
+         imgAfter = findViewById(R.id.imgAfter);
++        imgCustomerPhoto = findViewById(R.id.imgCustomerPhoto);
+         Button btnSave = findViewById(R.id.btnSave);
+         Button btnCaptureBefore = findViewById(R.id.btnCaptureBefore);
+         Button btnCaptureAfter = findViewById(R.id.btnCaptureAfter);
+@@ -122,6 +123,24 @@ public class RequestDetailActivity extends AppCompatActivity {
+                 .addOnFailureListener(e -> tvPaymentStatus.setText("Unable to load"));
+     }
+ 
++    private void bindCustomerPhoto(String photoUrl) {
++        if (photoUrl == null || !photoUrl.startsWith("data:image")) {
++            imgCustomerPhoto.setVisibility(android.view.View.GONE);
++            return;
++        }
++        try {
++            String base64 = photoUrl.substring(photoUrl.indexOf(',') + 1);
++            byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
++            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
++            if (bmp != null) {
++                imgCustomerPhoto.setImageBitmap(bmp);
++                imgCustomerPhoto.setVisibility(android.view.View.VISIBLE);
++            }
++        } catch (Exception e) {
++            imgCustomerPhoto.setVisibility(android.view.View.GONE);
++        }
++    }
++
+     // ================= PHOTO CAPTURE =================
+ 
+     private void startCapture(String type) {
+@@ -229,6 +248,7 @@ public class RequestDetailActivity extends AppCompatActivity {
+                     tvDeviceDetails.setText(r.getDeviceDetails() != null ? r.getDeviceDetails() : "Device N/A");
+                     tvIssueDesc.setText(r.getIssueDesc() != null ? r.getIssueDesc() : "");
+                     tvCurrentStatus.setText(r.getStatus() != null ? r.getStatus() : "pending");
++                    bindCustomerPhoto(r.getDevicePhotoUrl());
+ 
+                     int statusIndex = indexOf(STATUS_OPTIONS, r.getStatus());
+                     if (statusIndex >= 0) spinnerStatus.setSelection(statusIndex);
+@@ -275,20 +295,43 @@ public class RequestDetailActivity extends AppCompatActivity {
+         if (currentRequest == null) return;
+ 
+         String selectedStatus = STATUS_OPTIONS[spinnerStatus.getSelectedItemPosition()];
++        String previousTechnicianId = currentRequest.getAssignedTechnicianId();
+ 
+-        Map<String, Object> updates = new HashMap<>();
+-        updates.put("status", selectedStatus);
+-
++        String newTechnicianId = null;
+         int techPos = spinnerTechnician.getSelectedItemPosition();
+         if (techPos >= 0 && techPos < technicianIds.size()) {
+-            updates.put("assignedTechnicianId", technicianIds.get(techPos));
++            newTechnicianId = technicianIds.get(techPos);
+         }
+ 
++        Map<String, Object> updates = new HashMap<>();
++        updates.put("status", selectedStatus);
++        if (newTechnicianId != null) {
++            updates.put("assignedTechnicianId", newTechnicianId);
++        }
+         if ("completed".equals(selectedStatus)) {
+             updates.put("completedAt", System.currentTimeMillis());
+         }
+ 
+-        db.collection("repairRequests").document(requestId).update(updates)
++        boolean jobFinished = "completed".equals(selectedStatus) || "ready_for_pickup".equals(selectedStatus);
++        boolean technicianChanged = newTechnicianId != null && !newTechnicianId.equals(previousTechnicianId);
++
++        com.google.firebase.firestore.WriteBatch batch = db.batch();
++        batch.update(db.collection("repairRequests").document(requestId), updates);
++
++        // Keep technician availability honest: freeing up whoever's no longer
++        // on this job, marking whoever newly picked it up as busy, and freeing
++        // the current technician again once the job is actually done.
++        if (technicianChanged && previousTechnicianId != null) {
++            batch.update(db.collection("technicians").document(previousTechnicianId),
++                    "isAvailable", true);
++        }
++        String effectiveTechnicianId = newTechnicianId != null ? newTechnicianId : previousTechnicianId;
++        if (effectiveTechnicianId != null) {
++            batch.update(db.collection("technicians").document(effectiveTechnicianId),
++                    "isAvailable", jobFinished);
++        }
++
++        batch.commit()
+                 .addOnSuccessListener(unused -> {
+                     Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+                     finish();
+diff --git a/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java b/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
+index 863271e..4ec4de3 100644
+--- a/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
++++ b/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
+@@ -40,6 +40,7 @@ public class RequestSyncManager {
+                     syncPayments(customerUid, callback);
+                 })
+                 .addOnFailureListener(e -> {
++                    android.util.Log.e("RequestSync", "Failed to sync repairRequests", e);
+                     if (callback != null) callback.onSyncComplete(false);
+                 });
+     }
+@@ -75,6 +76,7 @@ public class RequestSyncManager {
+                     if (callback != null) callback.onSyncComplete(true);
+                 })
+                 .addOnFailureListener(e -> {
++                    android.util.Log.e("RequestSync", "Failed to sync payments", e);
+                     if (callback != null) callback.onSyncComplete(false);
+                 });
+     }
+diff --git a/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java b/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
+index a5b1772..0ff62f0 100644
+--- a/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
++++ b/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
+@@ -60,7 +60,7 @@ public class RepairFirestoreRepository {
+         data.put("customerLat", request.getCustomerLat());
+         data.put("customerLng", request.getCustomerLng());
+         data.put("requestedAt", request.getRequestedAt());
+-        data.put("completedAt", null);
++        data.put("completedAt", 0L);
+ 
+         db.collection("repairRequests").add(data)
+                 .addOnSuccessListener(docRef -> callback.onSuccess(docRef.getId()))
+diff --git a/app/src/main/java/com/example/techfix_mobile/ui/detail/RequestDetailActivity.java b/app/src/main/java/com/example/techfix_mobile/ui/detail/RequestDetailActivity.java
+index 3bb4a4e..4226245 100644
+--- a/app/src/main/java/com/example/techfix_mobile/ui/detail/RequestDetailActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/ui/detail/RequestDetailActivity.java
+@@ -1,8 +1,12 @@
+ package com.example.techfix_mobile.ui.detail;
+ 
+ import android.content.Intent;
++import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
+ import android.os.Bundle;
++import android.util.Base64;
+ import android.widget.Button;
++import android.widget.ImageView;
+ import android.widget.TextView;
+ import android.widget.Toast;
+ import androidx.appcompat.app.AppCompatActivity;
+@@ -52,10 +56,27 @@ public class RequestDetailActivity extends AppCompatActivity {
+         TextView title = findViewById(R.id.txtDetailTitle);
+         TextView issue = findViewById(R.id.txtDetailIssue);
+         TextView statusStep = findViewById(R.id.txtCurrentStatus);
++        ImageView photo = findViewById(R.id.imgDevicePhoto);
+ 
+         title.setText(request.getDeviceDetails());
+         issue.setText(request.getIssueDesc());
+         statusStep.setText(describeStatus());
++
++        String photoUrl = request.getDevicePhotoUrl();
++        if (photoUrl != null && photoUrl.startsWith("data:image")) {
++            try {
++                String base64 = photoUrl.substring(photoUrl.indexOf(',') + 1);
++                byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
++                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
++                if (bmp != null) {
++                    photo.setImageBitmap(bmp);
++                    photo.setVisibility(android.view.View.VISIBLE);
++                }
++            } catch (Exception e) {
++                // Corrupt/old-format photo data — leave the ImageView hidden rather than crash.
++                photo.setVisibility(android.view.View.GONE);
++            }
++        }
+     }
+ 
+     private String describeStatus() {
+diff --git a/app/src/main/res/layout/activity_admin_request_detail.xml b/app/src/main/res/layout/activity_admin_request_detail.xml
+index 253716b..88e5d69 100644
+--- a/app/src/main/res/layout/activity_admin_request_detail.xml
++++ b/app/src/main/res/layout/activity_admin_request_detail.xml
+@@ -26,6 +26,22 @@
+             android:layout_marginTop="8dp"
+             android:textColor="@color/text_dim" />
+ 
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="18dp"
++            android:textColor="@color/text_faint"
++            android:text="Customer's Submitted Photo:" />
++
++        <ImageView
++            android:id="@+id/imgCustomerPhoto"
++            android:layout_width="match_parent"
++            android:layout_height="180dp"
++            android:layout_marginTop="8dp"
++            android:scaleType="centerCrop"
++            android:background="@color/panel"
++            android:visibility="gone" />
++
+         <TextView
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+diff --git a/app/src/main/res/layout/activity_request_detail.xml b/app/src/main/res/layout/activity_request_detail.xml
+index c4077ac..1884f95 100644
+--- a/app/src/main/res/layout/activity_request_detail.xml
++++ b/app/src/main/res/layout/activity_request_detail.xml
+@@ -19,6 +19,15 @@
+             android:textColor="@color/text_primary"
+             android:textAppearance="@style/TextAppearance.TechFix.Display" />
+ 
++        <ImageView
++            android:id="@+id/imgDevicePhoto"
++            android:layout_width="match_parent"
++            android:layout_height="200dp"
++            android:layout_marginTop="14dp"
++            android:scaleType="centerCrop"
++            android:background="@color/panel"
++            android:visibility="gone" />
++
+         <TextView
+             android:id="@+id/txtDetailIssue"
+             android:layout_width="wrap_content"

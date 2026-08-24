@@ -1,6 +1,5 @@
 package com.example.techfix_mobile.admin.requests;
 
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.model.RepairRequest;
+import com.example.techfix_mobile.util.StatusChipBinder;
 
 import java.util.List;
 
@@ -39,22 +39,9 @@ public class RequestAdapter extends RecyclerView.Adapter<RequestAdapter.ViewHold
         holder.tvDeviceDetails.setText(r.getDeviceDetails() != null ? r.getDeviceDetails() : "Device details N/A");
         holder.tvIssueDesc.setText(r.getIssueDesc() != null ? r.getIssueDesc() : "");
 
-        String status = r.getStatus() != null ? r.getStatus() : "pending";
-        holder.tvStatusChip.setText(status.replace("_", " "));
-        holder.tvStatusChip.setBackgroundColor(colorForStatus(status));
+        StatusChipBinder.bind(holder.tvStatusChip, r.getStatus());
 
         holder.itemView.setOnClickListener(v -> listener.onClick(r));
-    }
-
-    private int colorForStatus(String status) {
-        switch (status) {
-            case "pending": return Color.parseColor("#EEEE30");        // bright yellow
-            case "assigned": return Color.parseColor("#A0A000");       // mustard
-            case "in_progress": return Color.parseColor("#D8D800");    // gold-yellow
-            case "completed": return Color.parseColor("#C8C8B0");      // light khaki
-            case "ready_for_pickup": return Color.parseColor("#F8FFD0"); // pale yellow
-            default: return Color.parseColor("#787868");               // muted olive fallback
-        }
     }
 
     @Override

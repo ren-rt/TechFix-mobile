@@ -21,6 +21,7 @@ import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
 import com.example.techfix_mobile.model.DeviceCategory;
 import com.example.techfix_mobile.model.RepairService;
 import com.example.techfix_mobile.ui.servicedetail.ServiceDetailActivity;
+import com.example.techfix_mobile.util.BottomNavHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -104,6 +105,8 @@ public class HomeActivity extends AppCompatActivity {
 
         loadServices();
         loadCategories();
+
+        BottomNavHelper.setup(this, BottomNavHelper.TAB_HOME);
     }
 
     private void loadServices() {

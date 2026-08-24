@@ -27,6 +27,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         manifestPlaceholders["MAPS_API_KEY"] = localProps.getProperty("MAPS_API_KEY") ?: ""
+
+        // PayHere server-to-server notify webhook. During local dev this points at
+        // an ngrok tunnel into the Functions emulator (URL changes every time ngrok
+        // restarts — update local.properties, not this file). In production it
+        // should be the real deployed payhereNotify Cloud Function URL.
+        //buildConfigField("String", "PAYHERE_NOTIFY_URL",
+              //  "\"${localProps.getProperty("PAYHERE_NOTIFY_URL") ?: ""}\"")
+        buildConfigField("String", "PAYHERE_NOTIFY_URL", "\"${localProps.getProperty("PAYHERE_NOTIFY_URL") ?: ""}\"")
     }
 
     buildTypes {
@@ -41,6 +49,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 

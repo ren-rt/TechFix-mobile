@@ -60,7 +60,7 @@ public class RepairFirestoreRepository {
         data.put("customerLat", request.getCustomerLat());
         data.put("customerLng", request.getCustomerLng());
         data.put("requestedAt", request.getRequestedAt());
-        data.put("completedAt", null);
+        data.put("completedAt", 0L);
 
         db.collection("repairRequests").add(data)
                 .addOnSuccessListener(docRef -> callback.onSuccess(docRef.getId()))

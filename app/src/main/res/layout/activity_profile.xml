@@ -3,59 +3,74 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/ink"
-    android:padding="22dp">
+    android:background="@color/ink">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="My Profile"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:textAppearance="@style/TextAppearance.TechFix.Display"
-        android:layout_marginBottom="24dp" />
-
-    <EditText
-        android:id="@+id/profileName"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Name"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_faint"
-        android:background="@drawable/bg_input_field"
-        android:padding="13dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-    <EditText
-        android:id="@+id/profilePhone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:hint="Phone"
-        android:inputType="phone"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_faint"
-        android:background="@drawable/bg_input_field"
-        android:padding="13dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="22dp">
 
-    <EditText
-        android:id="@+id/profileEmail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:hint="Email"
-        android:inputType="textEmailAddress"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_faint"
-        android:background="@drawable/bg_input_field"
-        android:padding="13dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Profile"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:textAppearance="@style/TextAppearance.TechFix.Display"
+                android:layout_marginBottom="24dp" />
 
-    <Button
-        android:id="@+id/updateProfileBtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
-        android:text="Update Profile"
-        style="@style/Widget.TechFix.Button.Primary" />
+            <EditText
+                android:id="@+id/profileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Name"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_faint"
+                android:background="@drawable/bg_input_field"
+                android:padding="13dp" />
+
+            <EditText
+                android:id="@+id/profilePhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:hint="Phone"
+                android:inputType="phone"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_faint"
+                android:background="@drawable/bg_input_field"
+                android:padding="13dp" />
+
+            <EditText
+                android:id="@+id/profileEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_faint"
+                android:background="@drawable/bg_input_field"
+                android:padding="13dp" />
+
+            <Button
+                android:id="@+id/updateProfileBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Update Profile"
+                style="@style/Widget.TechFix.Button.Primary" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <include layout="@layout/bottom_nav" />
 
 </LinearLayout>

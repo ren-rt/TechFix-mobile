@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.techfix_mobile.model.Branch;
 import com.example.techfix_mobile.data.remote.RepairFirestoreRepository;
+import com.example.techfix_mobile.util.BottomNavHelper;
 
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
@@ -67,6 +68,8 @@ public class BranchListActivity extends AppCompatActivity {
         rvBranches.setAdapter(adapter);
 
         loadBranches(adapter);
+
+        BottomNavHelper.setup(this, BottomNavHelper.TAB_BRANCHES);
     }
 
     @Override

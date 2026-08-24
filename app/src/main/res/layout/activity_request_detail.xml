@@ -19,6 +19,15 @@
             android:textColor="@color/text_primary"
             android:textAppearance="@style/TextAppearance.TechFix.Display" />
 
+        <ImageView
+            android:id="@+id/imgDevicePhoto"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="14dp"
+            android:scaleType="centerCrop"
+            android:background="@color/panel"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/txtDetailIssue"
             android:layout_width="wrap_content"

@@ -83,7 +83,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return getReadableDatabase().query(TABLE_CURRENT_USER, null, null, null, null, null, null);
     }
     public void clearUserData() {
-        getWritableDatabase().delete(TABLE_CURRENT_USER, null, null);
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TABLE_CURRENT_USER, null, null);
+        // Also wipe the previous user's cached requests/payments so a different
+        // account logging in on the same device never sees someone else's data.
+        db.delete(TABLE_MY_REQUESTS, null, null);
+        db.delete(TABLE_PAYMENTS_CACHE, null, null);
     }
 
     // ---------- my_requests (Person 3's API — RequestSyncManager/PaymentActivity/etc use these) ----------

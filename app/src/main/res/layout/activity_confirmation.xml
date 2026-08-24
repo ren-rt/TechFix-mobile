@@ -46,11 +46,19 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/btnBackToHome"
+        android:id="@+id/btnViewMyRequests"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
-        android:text="Back to Home"
+        android:text="View My Requests"
         style="@style/Widget.TechFix.Button.Primary" />
+
+    <Button
+        android:id="@+id/btnBackToHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Back to Home"
+        style="@style/Widget.TechFix.Button.Ghost" />
 
 </LinearLayout>

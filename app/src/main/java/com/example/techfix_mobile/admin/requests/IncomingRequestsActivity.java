@@ -58,6 +58,11 @@ public class IncomingRequestsActivity extends AppCompatActivity {
                     });
                     adapter.notifyDataSetChanged();
                     tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("IncomingRequests", "Failed to load repairRequests", e);
+                    tvEmpty.setText("Couldn't load requests: " + e.getMessage());
+                    tvEmpty.setVisibility(View.VISIBLE);
                 });
     }
 }

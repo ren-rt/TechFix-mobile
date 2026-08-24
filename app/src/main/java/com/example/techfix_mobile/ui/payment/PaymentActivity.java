@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.techfix_mobile.BuildConfig;
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.data.PaymentRepository;
 import com.example.techfix_mobile.DatabaseHelper;
@@ -28,7 +29,7 @@ public class PaymentActivity extends AppCompatActivity {
     private static final int PAYHERE_REQUEST = 11001;
 
     private static final String PAYHERE_MERCHANT_ID = "1237421";
-    private static final String NOTIFY_URL = "https://untamed-promoter-blabber.ngrok-free.dev/techfix-mobile/us-central1/payhereNotify";
+    private static final String NOTIFY_URL = BuildConfig.PAYHERE_NOTIFY_URL;
 
     private DatabaseHelper dbHelper;
     private PaymentRepository paymentRepository;
@@ -51,6 +52,13 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void startPaymentFlow() {
+        if (NOTIFY_URL == null || NOTIFY_URL.isEmpty()) {
+            Toast.makeText(this, "PAYHERE_NOTIFY_URL is not set in local.properties — " +
+                    "payment can't confirm without it", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();

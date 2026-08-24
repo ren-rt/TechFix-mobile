@@ -6,6 +6,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.techfix_mobile.R;
 import com.example.techfix_mobile.ui.home.HomeActivity;
+import com.example.techfix_mobile.ui.myrequests.MyRequestsActivity;
 
 public class ConfirmationActivity extends AppCompatActivity {
 
@@ -25,6 +26,12 @@ public class ConfirmationActivity extends AppCompatActivity {
 
         tvBranch.setText("Assigned to: " + branchName);
         tvRequestId.setText("Request ID: " + requestId);
+
+        findViewById(R.id.btnViewMyRequests).setOnClickListener(v -> {
+            Intent intent = new Intent(this, MyRequestsActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        });
 
         findViewById(R.id.btnBackToHome).setOnClickListener(v -> {
             Intent intent = new Intent(this, HomeActivity.class);

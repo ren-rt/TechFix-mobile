@@ -1,8 +1,12 @@
 package com.example.techfix_mobile.ui.detail;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,10 +56,26 @@ public class RequestDetailActivity extends AppCompatActivity {
         TextView title = findViewById(R.id.txtDetailTitle);
         TextView issue = findViewById(R.id.txtDetailIssue);
         TextView statusStep = findViewById(R.id.txtCurrentStatus);
+        ImageView photo = findViewById(R.id.imgDevicePhoto);
 
         title.setText(request.getDeviceDetails());
         issue.setText(request.getIssueDesc());
         statusStep.setText(describeStatus());
+
+        String photoUrl = request.getDevicePhotoUrl();
+        if (photoUrl != null && photoUrl.startsWith("data:image")) {
+            try {
+                String base64 = photoUrl.substring(photoUrl.indexOf(',') + 1);
+                byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
+                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (bmp != null) {
+                    photo.setImageBitmap(bmp);
+                    photo.setVisibility(android.view.View.VISIBLE);
+                }
+            } catch (Exception e) {
+                photo.setVisibility(android.view.View.GONE);
+            }
+        }
     }
 
     private String describeStatus() {

@@ -1,0 +1,110 @@
+rules_version = '2';
+
+// SECURITY NOTE (read before deploying):
+// This repo had NO firestore.rules file and firebase.json had no "firestore"
+// section, which usually means the project is still on Firestore's default
+// test-mode rules (wide open reads/writes to anyone with the client config,
+// which is not secret) or whatever was hand-edited in the console and never
+// exported. Either way, nothing server-side was enforcing the access model
+// the app's UI assumes. Concretely, without rules like these:
+//   - Any client can PATCH their own users/{uid} doc to set role:"admin"
+//     and instantly get routed into the admin dashboard (Login/Splash pick
+//     the destination Activity purely off this field).
+//   - Any client can read every other customer's repairRequests/payments
+//     (device details, issue text, phone/location, payment amounts).
+//   - Any client can set a payments/{id}.status to "completed" directly,
+//     bypassing the signed PayHere webhook in functions/index.js entirely.
+//
+// Deploy with: firebase deploy --only firestore:rules
+// (after wiring "firestore": { "rules": "firestore.rules" } into firebase.json)
+// Review against your actual data model before deploying — this mirrors the
+// collections/fields the client code in this repo actually reads and writes.
+
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function isAdmin() {
+  return isSignedIn() &&
+    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+}
+
+function isOwner(uidField) {
+  return isSignedIn() && request.auth.uid == uidField;
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- users ----
+    // Everyone can read/write only their own profile. "role" can never be
+    // set or changed by the client — it's fixed to "customer" on create,
+    // and only ever flipped to "admin" by hand in the console / an admin
+    // tool that uses the Admin SDK (which bypasses these rules).
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && request.resource.data.role == 'customer';
+      allow update: if isOwner(uid) &&
+        request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    // ---- repairRequests ----
+    // A customer can create their own request and read it back. Only an
+    // admin can change status/assignedTechnicianId/etc (RequestDetailActivity
+    // under admin/). Customers never edit a request after submitting it.
+    match /repairRequests/{requestId} {
+      allow read: if isAdmin() || isOwner(resource.data.customerId);
+      allow create: if isOwner(request.resource.data.customerId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ---- payments ----
+    // Status must never be settable by a client — only the payhereNotify
+    // Cloud Function (Admin SDK, bypasses rules) flips it to
+    // completed/failed after verifying PayHere's MD5 signature. A customer
+    // can create the initial "pending" record and read their own payments.
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || isOwner(resource.data.customerId);
+      allow create: if isOwner(request.resource.data.customerId) &&
+        request.resource.data.status == 'pending';
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ---- repairPhotos (admin before/after capture) ----
+    match /repairPhotos/{photoId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ---- reference data browsed by any signed-in customer, ----
+    // ---- managed only through the admin "Manage Resources" screens ----
+    match /branches/{branchId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /technicians/{technicianId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /deviceCategories/{categoryId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /repairServices/{serviceId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /spareParts/{partId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Deny anything not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

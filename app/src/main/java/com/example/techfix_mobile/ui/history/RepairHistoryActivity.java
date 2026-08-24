@@ -11,6 +11,7 @@ import com.example.techfix_mobile.DatabaseHelper;
 import com.example.techfix_mobile.model.RepairRequest;
 import com.example.techfix_mobile.ui.detail.RequestDetailActivity;
 import com.example.techfix_mobile.ui.myrequests.MyRequestsAdapter;
+import com.example.techfix_mobile.util.BottomNavHelper;
 
 public class RepairHistoryActivity extends AppCompatActivity {
 
@@ -34,5 +35,7 @@ public class RepairHistoryActivity extends AppCompatActivity {
         // History = SQLite already synced by MyRequestsActivity; this screen just filters
         // for completed/ready_for_pickup, it does not trigger its own Firestore sync.
         adapter.submitList(dbHelper.getHistoryRequests());
+
+        BottomNavHelper.setup(this, BottomNavHelper.TAB_HISTORY);
     }
 }

@@ -1,0 +1,50 @@
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
+index 3d46971..16f70be 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/IncomingRequestsActivity.java
+@@ -58,6 +58,11 @@ public class IncomingRequestsActivity extends AppCompatActivity {
+                     });
+                     adapter.notifyDataSetChanged();
+                     tvEmpty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
++                })
++                .addOnFailureListener(e -> {
++                    android.util.Log.e("IncomingRequests", "Failed to load repairRequests", e);
++                    tvEmpty.setText("Couldn't load requests: " + e.getMessage());
++                    tvEmpty.setVisibility(View.VISIBLE);
+                 });
+     }
+ }
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java b/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
+index 863271e..4ec4de3 100644
+--- a/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
++++ b/app/src/main/java/com/example/techfix_mobile/data/RequestSyncManager.java
+@@ -40,6 +40,7 @@ public class RequestSyncManager {
+                     syncPayments(customerUid, callback);
+                 })
+                 .addOnFailureListener(e -> {
++                    android.util.Log.e("RequestSync", "Failed to sync repairRequests", e);
+                     if (callback != null) callback.onSyncComplete(false);
+                 });
+     }
+@@ -75,6 +76,7 @@ public class RequestSyncManager {
+                     if (callback != null) callback.onSyncComplete(true);
+                 })
+                 .addOnFailureListener(e -> {
++                    android.util.Log.e("RequestSync", "Failed to sync payments", e);
+                     if (callback != null) callback.onSyncComplete(false);
+                 });
+     }
+diff --git a/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java b/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
+index a5b1772..0ff62f0 100644
+--- a/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
++++ b/app/src/main/java/com/example/techfix_mobile/data/remote/RepairFirestoreRepository.java
+@@ -60,7 +60,7 @@ public class RepairFirestoreRepository {
+         data.put("customerLat", request.getCustomerLat());
+         data.put("customerLng", request.getCustomerLng());
+         data.put("requestedAt", request.getRequestedAt());
+-        data.put("completedAt", null);
++        data.put("completedAt", 0L);
+ 
+         db.collection("repairRequests").add(data)
+                 .addOnSuccessListener(docRef -> callback.onSuccess(docRef.getId()))

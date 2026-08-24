@@ -1,0 +1,53 @@
+diff --git a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+index 7d22239..07a03a4 100644
+--- a/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
++++ b/app/src/main/java/com/example/techfix_mobile/admin/requests/RequestDetailActivity.java
+@@ -275,20 +275,43 @@ public class RequestDetailActivity extends AppCompatActivity {
+         if (currentRequest == null) return;
+ 
+         String selectedStatus = STATUS_OPTIONS[spinnerStatus.getSelectedItemPosition()];
++        String previousTechnicianId = currentRequest.getAssignedTechnicianId();
+ 
+-        Map<String, Object> updates = new HashMap<>();
+-        updates.put("status", selectedStatus);
+-
++        String newTechnicianId = null;
+         int techPos = spinnerTechnician.getSelectedItemPosition();
+         if (techPos >= 0 && techPos < technicianIds.size()) {
+-            updates.put("assignedTechnicianId", technicianIds.get(techPos));
++            newTechnicianId = technicianIds.get(techPos);
+         }
+ 
++        Map<String, Object> updates = new HashMap<>();
++        updates.put("status", selectedStatus);
++        if (newTechnicianId != null) {
++            updates.put("assignedTechnicianId", newTechnicianId);
++        }
+         if ("completed".equals(selectedStatus)) {
+             updates.put("completedAt", System.currentTimeMillis());
+         }
+ 
+-        db.collection("repairRequests").document(requestId).update(updates)
++        boolean jobFinished = "completed".equals(selectedStatus) || "ready_for_pickup".equals(selectedStatus);
++        boolean technicianChanged = newTechnicianId != null && !newTechnicianId.equals(previousTechnicianId);
++
++        com.google.firebase.firestore.WriteBatch batch = db.batch();
++        batch.update(db.collection("repairRequests").document(requestId), updates);
++
++        // Keep technician availability honest: freeing up whoever's no longer
++        // on this job, marking whoever newly picked it up as busy, and freeing
++        // the current technician again once the job is actually done.
++        if (technicianChanged && previousTechnicianId != null) {
++            batch.update(db.collection("technicians").document(previousTechnicianId),
++                    "isAvailable", true);
++        }
++        String effectiveTechnicianId = newTechnicianId != null ? newTechnicianId : previousTechnicianId;
++        if (effectiveTechnicianId != null) {
++            batch.update(db.collection("technicians").document(effectiveTechnicianId),
++                    "isAvailable", jobFinished);
++        }
++
++        batch.commit()
+                 .addOnSuccessListener(unused -> {
+                     Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+                     finish();

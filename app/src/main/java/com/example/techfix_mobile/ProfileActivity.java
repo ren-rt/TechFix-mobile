@@ -8,7 +8,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.techfix_mobile.util.BottomNavHelper;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +31,14 @@ public class ProfileActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         db = FirebaseFirestore.getInstance();
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Session expired, please log in again", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        uid = currentUser.getUid();
 
         profileName = findViewById(R.id.profileName);
         profilePhone = findViewById(R.id.profilePhone);
@@ -39,6 +48,8 @@ public class ProfileActivity extends AppCompatActivity {
         loadProfileData();
 
         updateProfileBtn.setOnClickListener(v -> updateProfile());
+
+        BottomNavHelper.setup(this, BottomNavHelper.TAB_PROFILE);
     }
 
     private void loadProfileData() {

@@ -30,3 +30,11 @@ functions/node_modules/
 functions/.secret.local
 firebase-debug.log
 seed/serviceAccountKey.json
+
+# Ignore shell scripts
+*.sh
+apply_phase*.sh
+
+# Ignore dependencies and build artifacts
+node_modules/
+seed/node_modules/
